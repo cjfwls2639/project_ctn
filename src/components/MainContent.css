@@ -1,0 +1,94 @@
+.main-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.main-content {
+  margin-left: calc(10rem + 3rem);
+  margin-top: 4rem;
+  padding: 2rem;
+}
+
+.project-info {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.project-info h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: #333;
+}
+
+.project-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.project-details h3 {
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.project-details p {
+  color: #333;
+  line-height: 1.6;
+}
+
+.hero-section {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.hero-section h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.hero-section p {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.get-started-btn, .learn-more-btn {
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.get-started-btn {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.get-started-btn:hover {
+  background-color: #0056b3;
+}
+
+.learn-more-btn {
+  background: none;
+  border: 1px solid #007bff;
+  color: #007bff;
+}
+
+.learn-more-btn:hover {
+  background-color: #007bff;
+  color: white;
+}
