@@ -195,20 +195,23 @@ const calculateDday = (dateString) => {
     const closeModal = () => setIsModalOpen(false);
 
     const handleDeleteProject = () => {
-      if (projects.length > 1) { // 최소 1개의 프로젝트는 유지
-        const newProjects = projects.filter((_, index) => index !== selectedProject);
+      const newProjects = projects.filter((_, index) => index !== selectedProject);
       setProjects(newProjects);
-      setSelectedProject(0); // 첫 번째 프로젝트로 선택
-    }
-  };
+      if (newProjects.length > 0) {
+        setSelectedProject(0);
+      } else {
+        setSelectedProject(null);
+      }
+    };
 
-  return (
-    <div className="main-container">
-      <div className="content-wrapper">
-        <nav className="navbar">
-          <div className="navbar-brand">
-            <h1>To Be Continew</h1>
-          </div>
+    return (
+      <div>
+        <div className="main-container">
+          <div className="content-wrapper">
+          <nav className="navbar">
+            <div className="navbar-brand">
+              <h1>To Be Continew</h1>
+            </div>
           <div className="auth-dropdown" onClick={toggleAccountMenu}>
             <button className="auth-btn">Account <span className="caret">▼</span></button>
             <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
@@ -232,7 +235,6 @@ const calculateDday = (dateString) => {
             </ul>
           </nav>
           <div className="sidebar-buttons">
-
             <button className="sidebar-btn primary" onClick={openModal}>프로젝트 <br />생성</button>
             <button className="sidebar-btn secondary" onClick={handleDeleteProject}>프로젝트 <br />삭제</button>
           </div>
@@ -293,13 +295,13 @@ const calculateDday = (dateString) => {
           </div>
         </div>
       </div>
-      <ProjectModal 
-        isOpen={isModalOpen} 
-        onClose={closeModal} 
-        onSubmit={handleCreateProject} 
-      />
     </div>
-  );
+    <ProjectModal 
+      isOpen={isModalOpen} 
+      onClose={closeModal} 
+      onSubmit={handleCreateProject} 
+    />
+  </div>);
 };
 
 export default MainPage;
