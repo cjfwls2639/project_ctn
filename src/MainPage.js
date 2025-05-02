@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import './MainPage.css';
 import './components/Sidebar.css';
 import './components/NavigationBar.css';
 import './components/MainContent.css';
@@ -64,17 +65,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   );
 };
 
-const MainPage = () => {
-  const [projects, setProjects] = React.useState(['프로젝트 1']);
-  const [selectedProject, setSelectedProject] = React.useState(0);
-  const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [isAccountMenuOpen, setIsAccountMenuOpen] = React.useState(false);
-
-  const toggleAccountMenu = () => {
-    setIsAccountMenuOpen(!isAccountMenuOpen);
-  };
-
-  const calculateDday = (dateString) => {
+const calculateDday = (dateString) => {
     if (!dateString) return '미설정';
     
     const targetDate = new Date(dateString);
@@ -90,35 +81,122 @@ const MainPage = () => {
     }
   };
 
-  const handleCreateProject = (projectData) => {
-    // If the first project is a string, convert it to an object
-    const updatedProjects = projects.map((project, index) => {
-      if (index === 0 && typeof project === 'string') {
-        return {
-          name: project,
-          dDay: '',
-          description: ''
-        };
-      }
-      return project;
-    });
+  const MainPage = () => {
+    const [projects, setProjects] = React.useState([]);
+    const [selectedProject, setSelectedProject] = React.useState(null);
+    const [isModalOpen, setIsModalOpen] = React.useState(false);
+    const [isAccountMenuOpen, setIsAccountMenuOpen] = React.useState(false);
+    const [selectedTab, setSelectedTab] = React.useState('업무');
 
-    setProjects([
-      ...updatedProjects,
-      {
+    const details = projects.length > 0 && selectedProject !== null ? {
+      업무: {
+        title: '업무 현황',
+        content: [
+          { label: 'D-Day', value: projects[selectedProject]?.dDay ? calculateDday(projects[selectedProject].dDay) : '미설정' },
+          { label: '프로젝트 설명', value: projects[selectedProject]?.description || '설명이 없습니다' },
+          { label: '진행 중인 업무', value: '3개' },
+          { label: '완료된 업무', value: '12개' },
+          { label: '예정된 업무', value: '5개' }
+        ]
+      },
+      활동로그: {
+        title: '최근 활동',
+        content: [
+          { label: '최근 업데이트', value: '2025-05-01' },
+          { label: '참여 인원', value: '4명' },
+          { label: '활동 시간', value: '45시간' }
+        ]
+      },
+      대시보드: {
+        title: '프로젝트 통계',
+        content: [
+          { label: '진행률', value: '75%' },
+          { label: '예산 사용률', value: '60%' },
+          { label: '남은 시간', value: '30일' }
+        ]
+      },
+      알람: {
+        title: '알림 설정',
+        content: [
+          { label: '업무 마감일 알림', value: 'ON' },
+          { label: '회의 알림', value: 'ON' },
+          { label: '업데이트 알림', value: 'ON' }
+        ]
+      }
+    } : {
+      업무: {
+        title: '업무 현황',
+        content: [
+          { label: '프로젝트를 선택하세요', value: '-' }
+        ]
+      },
+      활동로그: {
+        title: '최근 활동',
+        content: [
+          { label: '프로젝트를 선택하세요', value: '-' }
+        ]
+      },
+      대시보드: {
+        title: '프로젝트 통계',
+        content: [
+          { label: '프로젝트를 선택하세요', value: '-' }
+        ]
+      },
+      알람: {
+        title: '알림 설정',
+        content: [
+          { label: '프로젝트를 선택하세요', value: '-' }
+        ]
+      }
+    };
+
+    // Save projects to localStorage whenever they change
+    React.useEffect(() => {
+      localStorage.setItem('projects', JSON.stringify(projects));
+    }, [projects]);
+
+    const toggleAccountMenu = () => {
+      setIsAccountMenuOpen(!isAccountMenuOpen);
+    };
+
+    const handleCreateProject = (projectData) => {
+      // Convert all projects to objects if they're not already
+      const updatedProjects = projects.map((project, index) => {
+        if (typeof project === 'string') {
+          return {
+            name: project,
+            dDay: '',
+            description: ''
+          };
+        }
+        return project;
+      });
+
+      // Add the new project
+      const newProject = {
         name: projectData.name,
-        dDay: projectData.dDay,
-        description: projectData.description
-      }
-    ]);
-  };
+        dDay: projectData.dDay || '',
+        description: projectData.description || ''
+      };
+      setProjects([...updatedProjects, newProject]);
+      setIsModalOpen(false);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+      setProjects([
+        ...updatedProjects,
+        {
+          name: projectData.name,
+          dDay: projectData.dDay,
+          description: projectData.description
+        }
+      ]);
+    };
 
-  const handleDeleteProject = () => {
-    if (projects.length > 1) { // 최소 1개의 프로젝트는 유지
-      const newProjects = projects.filter((_, index) => index !== selectedProject);
+    const openModal = () => setIsModalOpen(true);
+    const closeModal = () => setIsModalOpen(false);
+
+    const handleDeleteProject = () => {
+      if (projects.length > 1) { // 최소 1개의 프로젝트는 유지
+        const newProjects = projects.filter((_, index) => index !== selectedProject);
       setProjects(newProjects);
       setSelectedProject(0); // 첫 번째 프로젝트로 선택
     }
@@ -135,7 +213,6 @@ const MainPage = () => {
             <button className="auth-btn">Account <span className="caret">▼</span></button>
             <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
               <a href="/login" className="auth-link">Login</a>
-              <a href="/signup" className="auth-link">Sign Up</a>
             </div>
           </div>
         </nav>
@@ -147,7 +224,7 @@ const MainPage = () => {
             <ul>
               {projects.map((project, index) => (
                 <li key={index} className={index === selectedProject ? 'active' : ''}>
-                  <a href="/" className="sidebar-link" onClick={() => setSelectedProject(index)}>
+                  <a className="sidebar-link" style={{ cursor: 'pointer' }} onClick={() => setSelectedProject(index)}>
                     {typeof project === 'string' ? project : project.name}
                   </a>
                 </li>
@@ -156,28 +233,64 @@ const MainPage = () => {
           </nav>
           <div className="sidebar-buttons">
 
-            <button className="sidebar-btn primary" onClick={openModal}>Create project</button>
-            <button className="sidebar-btn secondary" onClick={handleDeleteProject}>delete project</button>
+            <button className="sidebar-btn primary" onClick={openModal}>프로젝트 <br />생성</button>
+            <button className="sidebar-btn secondary" onClick={handleDeleteProject}>프로젝트 <br />삭제</button>
           </div>
         </aside>
         <div className="main-content">
-          {selectedProject !== null && (
-            <div className="project-info">
-              <h1>{typeof projects[selectedProject] === 'string' ? projects[selectedProject] : projects[selectedProject].name}</h1>
-              {typeof projects[selectedProject] !== 'string' && (
-                <div className="project-details">
-                  <div className="d-day">
-                    <h3>D-Day</h3>
-                    <p>{calculateDday(projects[selectedProject].dDay)}</p>
-                  </div>
-                  <div className="description">
-                    <h3>프로젝트 설명</h3>
-                    <p>{projects[selectedProject].description || '설명이 없습니다'}</p>
-                  </div>
-                </div>
-              )}
-            </div>
+          {projects.length > 0 && (
+            <h1 className="project-title">{selectedProject !== null && projects[selectedProject] ? (typeof projects[selectedProject] === 'string' ? projects[selectedProject] : projects[selectedProject].name) : '프로젝트를 선택하세요'}</h1>
           )}
+          <div className="content-container">
+            {projects.length > 0 ? (
+              <div className="project-info">
+                <div className="action-buttons">
+                  <button 
+                    className="action-btn primary" 
+                    onClick={() => setSelectedTab('메인')}
+                  >
+                    메인
+                  </button>
+                  <button 
+                    className="action-btn secondary" 
+                    onClick={() => setSelectedTab('업무')}
+                  >
+                    업무
+                  </button>
+                  <button 
+                    className="action-btn tertiary" 
+                    onClick={() => setSelectedTab('로그')}
+                  >
+                    로그
+                  </button>
+                  <button 
+                    className="action-btn quaternary" 
+                    onClick={() => setSelectedTab('알람')}
+                  >
+                    알람
+                  </button>
+                </div>
+                {projects.length > 0 && selectedProject !== null && projects[selectedProject] && (
+                  <div className="project-details-content">
+                    <h2>{details[selectedTab]?.title || '업무 현황'}</h2>
+                    <div className="details-grid">
+                      {details[selectedTab]?.content?.map((item, index) => (
+                        <div key={index} className="detail-item">
+                          <span className="label">{item.label}</span>
+                          <span className="value">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="no-projects">
+                <h2>프로젝트가 없습니다</h2>
+                <p>새로운 프로젝트를 생성해보세요</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <ProjectModal 
