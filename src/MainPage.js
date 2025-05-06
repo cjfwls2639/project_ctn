@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './MainPage.css';
 import './components/Sidebar.css';
 import './components/NavigationBar.css';
@@ -82,73 +83,61 @@ const calculateDday = (dateString) => {
   };
 
   const MainPage = () => {
+    const navigate = useNavigate();
+
+    const handleLogout = (e) => {
+      e.preventDefault();
+      navigate('/login');
+    };
     const [projects, setProjects] = React.useState([]);
     const [selectedProject, setSelectedProject] = React.useState(null);
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [isAccountMenuOpen, setIsAccountMenuOpen] = React.useState(false);
-    const [selectedTab, setSelectedTab] = React.useState('업무');
+    const [isAlarmMenuOpen, setIsAlarmMenuOpen] = React.useState(false);
+    const [alarmCount, setAlarmCount] = React.useState(0);
+    const [selectedTab, setSelectedTab] = React.useState('메인');
 
-    const details = projects.length > 0 && selectedProject !== null ? {
-      업무: {
-        title: '업무 현황',
-        content: [
-          { label: 'D-Day', value: projects[selectedProject]?.dDay ? calculateDday(projects[selectedProject].dDay) : '미설정' },
-          { label: '프로젝트 설명', value: projects[selectedProject]?.description || '설명이 없습니다' },
-          { label: '진행 중인 업무', value: '3개' },
-          { label: '완료된 업무', value: '12개' },
-          { label: '예정된 업무', value: '5개' }
-        ]
-      },
-      활동로그: {
-        title: '최근 활동',
-        content: [
-          { label: '최근 업데이트', value: '2025-05-01' },
-          { label: '참여 인원', value: '4명' },
-          { label: '활동 시간', value: '45시간' }
-        ]
-      },
-      대시보드: {
-        title: '프로젝트 통계',
-        content: [
-          { label: '진행률', value: '75%' },
-          { label: '예산 사용률', value: '60%' },
-          { label: '남은 시간', value: '30일' }
-        ]
-      },
-      알람: {
-        title: '알림 설정',
-        content: [
-          { label: '업무 마감일 알림', value: 'ON' },
-          { label: '회의 알림', value: 'ON' },
-          { label: '업데이트 알림', value: 'ON' }
-        ]
-      }
-    } : {
-      업무: {
-        title: '업무 현황',
-        content: [
-          { label: '프로젝트를 선택하세요', value: '-' }
-        ]
-      },
-      활동로그: {
-        title: '최근 활동',
-        content: [
-          { label: '프로젝트를 선택하세요', value: '-' }
-        ]
-      },
-      대시보드: {
-        title: '프로젝트 통계',
-        content: [
-          { label: '프로젝트를 선택하세요', value: '-' }
-        ]
-      },
-      알람: {
-        title: '알림 설정',
-        content: [
-          { label: '프로젝트를 선택하세요', value: '-' }
-        ]
-      }
-    };
+    let details;
+    
+    if (projects.length > 0 && selectedProject !== null) {
+      details = {
+        메인: {
+          title: '프로젝트 현황',
+          content: [
+            { label: 'D-Day', value: ` : ${projects[selectedProject]?.dDay && calculateDday(projects[selectedProject].dDay) || '미설정'}` },
+            { label: '프로젝트 설명', value: ` : ${projects[selectedProject]?.description || '설명이 없습니다'}` },
+            { label: '진행률', value: ` : 75%` },
+            { label: '최근 업데이트', value: ` : 2025-05-01` },
+            { label: '참여 인원', value: ` : 4명` },
+            { label: '활동 시간', value: ` : 45시간` }
+          ]
+        },
+        업무: {
+          title: '업무 현황',
+          content: [
+            { label: '진행 중인 업무', value: ` : 3개` },
+            { label: '완료된 업무', value: ` : 12개` },
+            { label: '예정된 업무', value: ` : 5개` }
+          ]
+        },
+        로그: {
+          title: '로그',
+          content: [
+            { label: '최근 업데이트', value: ` : 2025-05-01` },
+            { label: '참여 인원', value: ` : 4명` },
+            { label: '활동 내용', value: ` : 45시간` }
+          ]
+        },
+        알람: {
+          title: '알림',
+          content: [
+            { label: '업무 마감일 알림', value: ` : ON` },
+            { label: '회의 알림', value: ` : ON` },
+            { label: '업데이트 알림', value: ` : ON` }
+          ]
+        }
+      };
+    }
 
     // Save projects to localStorage whenever they change
     React.useEffect(() => {
@@ -157,6 +146,12 @@ const calculateDday = (dateString) => {
 
     const toggleAccountMenu = () => {
       setIsAccountMenuOpen(!isAccountMenuOpen);
+      setIsAlarmMenuOpen(false);
+    };
+
+    const toggleAlarmMenu = () => {
+      setIsAlarmMenuOpen(!isAlarmMenuOpen);
+      setIsAccountMenuOpen(false);
     };
 
     const handleCreateProject = (projectData) => {
@@ -210,12 +205,38 @@ const calculateDday = (dateString) => {
           <div className="content-wrapper">
           <nav className="navbar">
             <div className="navbar-brand">
-              <h1>To Be Continew</h1>
+              <h1 onClick={() => window.location.reload()}>To Be Continew</h1>
             </div>
-          <div className="auth-dropdown" onClick={toggleAccountMenu}>
-            <button className="auth-btn">Account <span className="caret">▼</span></button>
-            <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
-              <a href="/login" className="auth-link">Login</a>
+          <div className="navbar-controls">
+            <div className="alarm-dropdown" onClick={toggleAlarmMenu}>
+              <button className="alarm-btn">
+                🔔
+                {alarmCount > 0 && (
+                  <span className="alarm-badge">{alarmCount}</span>
+                )}
+              </button>
+              <div className="alarm-menu" style={{ display: isAlarmMenuOpen ? 'block' : 'none' }}>
+                {alarmCount > 0 ? (
+                  <div className="alarm-item">새로운 알림이 {alarmCount}개 있습니다</div>
+                ) : (
+                  <div className="alarm-item">새로운 알림이 없습니다</div>
+                )}
+              </div>
+            </div>
+            <div className="auth-dropdown" onClick={toggleAccountMenu}>
+              <button className="auth-btn">
+                <span className="material-icons">account_circle</span>
+              </button>
+              <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
+                <a href="/profile" className="auth-menu-item">
+                  <span className="material-icons">person</span>
+                  <span>내 정보 변경</span>
+                </a>
+                <a href="/login" className="auth-menu-item" onClick={handleLogout}>
+                  <span className="material-icons">logout</span>
+                  <span>로그아웃</span>
+                </a>
+              </div>
             </div>
           </div>
         </nav>
@@ -246,35 +267,40 @@ const calculateDday = (dateString) => {
           <div className="content-container">
             {projects.length > 0 ? (
               <div className="project-info">
-                <div className="action-buttons">
-                  <button 
-                    className="action-btn primary" 
-                    onClick={() => setSelectedTab('메인')}
-                  >
-                    메인
-                  </button>
-                  <button 
-                    className="action-btn secondary" 
-                    onClick={() => setSelectedTab('업무')}
-                  >
-                    업무
-                  </button>
-                  <button 
-                    className="action-btn tertiary" 
-                    onClick={() => setSelectedTab('로그')}
-                  >
-                    로그
-                  </button>
-                  <button 
-                    className="action-btn quaternary" 
-                    onClick={() => setSelectedTab('알람')}
-                  >
-                    알람
-                  </button>
-                </div>
+                {selectedProject !== null && (
+                  <div className="action-buttons">
+                    <button 
+                      className="action-btn primary" 
+                      onClick={() => setSelectedTab('메인')}
+                    >
+                      메인
+                    </button>
+                    <button 
+                      className="action-btn secondary" 
+                      onClick={() => setSelectedTab('업무')}
+                    >
+                      업무
+                    </button>
+                    <button 
+                      className="action-btn tertiary" 
+                      onClick={() => setSelectedTab('로그')}
+                    >
+                      로그
+                    </button>
+                    <button 
+                      className="action-btn quaternary" 
+                      onClick={() => setSelectedTab('알람')}
+                    >
+                      알람
+                    </button>
+                  </div>
+                )}
+                {selectedProject === null && (
+                  <p>프로젝트를 선택해주세요</p>
+                )}
                 {projects.length > 0 && selectedProject !== null && projects[selectedProject] && (
                   <div className="project-details-content">
-                    <h2>{details[selectedTab]?.title || '업무 현황'}</h2>
+                    <h2>{details[selectedTab]?.title || '메인'}</h2>
                     <div className="details-grid">
                       {details[selectedTab]?.content?.map((item, index) => (
                         <div key={index} className="detail-item">

@@ -33,3 +33,132 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.navbar-brand h1 {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.navbar-brand h1:hover {
+  opacity: 0.8;
+}
+
+.navbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alarm-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.alarm-btn {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.alarm-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.alarm-badge {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  background-color: #ff4444;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.alarm-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  min-width: 200px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 10px 0;
+  z-index: 1000;
+}
+
+.alarm-item {
+  padding: 8px 15px;
+  color: #666;
+  font-size: 0.9em;
+}
+
+/* Auth button styles */
+.auth-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.auth-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: white;
+  min-width: 180px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 8px 0;
+  z-index: 1000;
+}
+
+.auth-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  color: #333;
+  text-decoration: none;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+
+.auth-menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.auth-menu-item .material-icons {
+  font-size: 1.2em;
+  margin-right: 10px;
+  color: #666;
+}
+
+.auth-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-size: 1.5em;
+}
+
+.auth-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.material-icons {
+  font-size: 1.5em;
+  color: #333;
+}
