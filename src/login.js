@@ -21,11 +21,12 @@ function Login() {
     
     setError('');
     // 로그인 성공 시 메인 페이지로 이동
-    navigate('/');
+    navigate('/main');
   };
 
   return (
     <div className="login-container">
+      <h1 className="login-title">to Be Continew</h1>
       <div className="login-box">
         <h2>로그인</h2>
         {error && <div className="login-error-message">{error}</div>}

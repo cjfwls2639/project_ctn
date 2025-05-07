@@ -1,9 +1,23 @@
 .login-container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
   background-color: #f5f5f5;
+  padding: 2rem 0;
+}
+
+.login-title {
+  text-align: center;
+  color: #333;
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+  letter-spacing: 5px;
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+  position: relative;
+  top: -5rem;
 }
 
 .login-box {
@@ -13,6 +27,8 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
+  position: relative;
+  top: -6rem;
 }
 
 .login-box h2 {
