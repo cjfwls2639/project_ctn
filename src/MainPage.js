@@ -238,11 +238,11 @@ const calculateDday = (dateString) => {
                 <span className="material-icons">account_circle</span>
               </button>
               <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
-                <a href="/profile" className="auth-menu-item">
+                <a className="auth-menu-item" onClick={() => navigate('/profile')}>
                   <span className="material-icons">person</span>
                   <span>내 정보 변경</span>
                 </a>
-                <a href="/login" className="auth-menu-item" onClick={handleLogout}>
+                <a className="auth-menu-item" onClick={handleLogout}>
                   <span className="material-icons">logout</span>
                   <span>로그아웃</span>
                 </a>
