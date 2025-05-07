@@ -191,7 +191,7 @@ const calculateDday = (dateString) => {
 
     const handleDeleteProject = () => {
       console.log(projects.length);
-      if(projects.length === 0){
+      if(projects.length === 0 || selectedProject === null){
         alert('프로젝트가 없습니다.');
         return;
       }
