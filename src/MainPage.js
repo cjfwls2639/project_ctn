@@ -215,7 +215,7 @@ const calculateDday = (dateString) => {
           <div className="content-wrapper">
           <nav className="navbar">
             <div className="navbar-brand">
-              <h1 onClick={() => window.location.reload()}>To Be Continew</h1>
+              <h1 onClick={() => navigate('/main')}>To Be Continew</h1>
             </div>
           <div className="navbar-controls">
             <div className="alarm-dropdown" onClick={toggleAlarmMenu}>
