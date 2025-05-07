@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./profile.css"; 
+import "./profile.css";
 
 const Profile = () => {
   const [userData, setUserData] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // 사용자 정보를 가져오는 API 요청
-    axios.get("http://localhost:5000/api/profile")
+    fetch("http://localhost:5000/api/profile")
       .then(response => {
-        setUserData(response.data);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        setUserData(data);
       })
       .catch(error => {
         setError("프로필 정보를 불러오는 데 실패했습니다.");

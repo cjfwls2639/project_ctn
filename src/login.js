@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './login.css';
 
 function Login() {
+  const navigate = useNavigate();
   const [id, setId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // 여기에 실제 로그인 로직을 구현하세요
     console.log('로그인 시도:', { id, password });
-    if (password.length < 6) {
-      setError('비밀번호는 6자 이상이어야 합니다.');
+    
+    // 특수문자 정규식 (영문, 숫자, 공백을 제외한 문자)
+    const specialCharRegex = /[^\w\s]/;
+    if (password.length < 8 || !specialCharRegex.test(password)) {
+      setError('비밀번호는 8자 이상, 특수문자를 포함하여야 합니다.');
       return;
     }
-    // 성공 시
+    
     setError('');
-    // 여기에 실제 로그인 API 호출을 추가하세요
+    // 로그인 성공 시 메인 페이지로 이동
+    navigate('/');
   };
 
   return (
@@ -54,9 +58,12 @@ function Login() {
         </form>
         <hr />
         <div className="button-container">
-          <button className='google-login-button' >구글 로그인</button>
-          <button className="login-register-link">
-            <Link to="/register">회원가입</Link>
+          <button className='google-login-button'>구글 로그인</button>
+          <button 
+            className="login-register-link"
+            onClick={() => navigate('/register')}
+          >
+            회원가입
           </button>  
         </div>
       </div>

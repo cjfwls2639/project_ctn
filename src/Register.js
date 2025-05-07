@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Register.css';
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -36,8 +38,11 @@ function Register() {
 
     if (!formData.password.trim()) {
       newErrors.password = '비밀번호는 필수입니다.';
-    } else if (formData.password.length < 6) {
-      newErrors.password = '비밀번호는 6자 이상이어야 합니다.';
+    } else {
+      const specialCharRegex = /[^\w\s]/;
+      if (formData.password.length < 8 || !specialCharRegex.test(formData.password)) {
+        newErrors.password = '비밀번호는 8자 이상, 특수문자를 포함하여야 합니다.';
+      }
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -59,6 +64,9 @@ function Register() {
     // 여기에 회원가입 API 호출을 추가하세요
     console.log('회원가입 시도:', formData);
     setErrors({});
+    
+    // 회원가입 성공 시 로그인 페이지로 이동
+    navigate('/login');
   };
 
   return (
@@ -119,7 +127,13 @@ function Register() {
           </button>
         </form>
         <div className="login-link">
-          이미 회원이신가요? <a href="/login">로그인</a>
+          이미 회원이신가요?{' '}
+          <button 
+            className="login-link-button"
+            onClick={() => navigate('/login')}
+          >
+            로그인
+          </button>
         </div>
       </div>
     </div>

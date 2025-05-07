@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MainPage.css';
 import './components/Sidebar.css';
@@ -190,12 +190,22 @@ const calculateDday = (dateString) => {
     const closeModal = () => setIsModalOpen(false);
 
     const handleDeleteProject = () => {
-      const newProjects = projects.filter((_, index) => index !== selectedProject);
-      setProjects(newProjects);
-      if (newProjects.length > 0) {
-        setSelectedProject(0);
-      } else {
-        setSelectedProject(null);
+      console.log(projects.length);
+      if(projects.length === 0){
+        alert('프로젝트가 없습니다.');
+        return;
+      }
+      if(window.confirm('프로젝트를 삭제하시겠습니까?')) {
+        const newProjects = projects.filter((_, index) => index !== selectedProject);
+        setProjects(newProjects);
+        if (newProjects.length > 0) {
+            setSelectedProject(0);
+          } else {
+            setSelectedProject(null);
+          }
+        alert('프로젝트가 삭제되었습니다.');
+      }else{
+        alert('프로젝트 삭제를 취소하였습니다.');
       }
     };
 
