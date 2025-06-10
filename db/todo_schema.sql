@@ -77,7 +77,7 @@ CREATE TABLE activity_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     task_id INT NOT NULL,
     user_id INT NOT NULL,
-    action VARCHAR(100) NOT NULL,
+    behavior VARCHAR(100) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (task_id) REFERENCES tasks(task_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
