@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from '../backend/axios.js';
 import './styles/MainPage.css';
 import './styles/Sidebar.css';
 import './styles/NavigationBar.css';
@@ -225,7 +226,7 @@ const calculateDday = (dateString) => {
               <h1 onClick={() => navigate('/main')}>To Be Continew</h1>
             </div>
           <div className="navbar-controls">
-            <div className="alarm-dropdown" onClick={toggleAlarmMenu}>
+            <div clsetProjectsassName="alarm-dropdown" onClick={toggleAlarmMenu}>
               <button className="alarm-btn">
                 🔔
                 {alarmCount > 0 && (
