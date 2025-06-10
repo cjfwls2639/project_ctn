@@ -277,15 +277,12 @@ app.delete("/api/projects/:id", (req, res) => {
 app.get("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const sql = `
-        SELECT
-            t.*,
-            creator.username AS created_by_username,
-            assignee.username AS assigned_to_username
-        FROM tasks t
-        JOIN users creator ON t.created_by_user_id = creator.id
-        LEFT JOIN users assignee ON t.assigned_to_user_id = assignee.id
+        SELECT t.*, GROUP_CONCAT(u.username SEPARATOR ', ') AS assignees
+        FROM tasks AS t LEFT JOIN task_assignees AS ta ON t.task_id = ta.task_id
+        LEFT JOIN users AS u ON ta.user_id = u.user_id
         WHERE t.project_id = ?
-        ORDER BY t.created_at DESC
+        GROUP BY t.task_id
+        ORDER BY t.created_at DESC;
     `;
   db.query(sql, [projectId], (err, results) => {
     if (err) {
