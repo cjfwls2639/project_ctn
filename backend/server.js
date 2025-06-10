@@ -77,7 +77,8 @@ app.post("/api/login", (req, res) => {
       .status(400)
       .json({ error: "사용자 이름과 비밀번호를 입력해주세요." });
   }
-  // 테이블명 'users', 컬럼명 'user_id', 'password' 사용
+  
+// 테이블명 'users', 컬럼명 'user_id', 'password' 사용
   const sql =
     "SELECT user_id, username, password FROM users WHERE username = ?";
   db.query(sql, [username], async (err, results) => {
@@ -100,19 +101,20 @@ app.post("/api/login", (req, res) => {
       message: "로그인 성공!",
       user_id: user.user_id,
       username: user.username,
-    }); // 'user_id' -> 'id'
+    });
   });
 });
+
 
 // --- 2. 프로젝트 API (Projects) ---
 
 // 2.1. 새로운 프로젝트 생성 (CREATE)
 app.post("/api/projects", async (req, res) => {
-  const { name, description, owner_id } = req.body;
-  if (!name || !owner_id) {
+  const { name, content, created_by } = req.body;
+  if (!name || !created_by) {
     return res
       .status(400)
-      .json({ error: "프로젝트 이름과 소유자 ID는 필수입니다." });
+      .json({ error: "프로젝트 이름을 입력 해주세요." });
   }
 
   const connection = await db.promise().getConnection();
@@ -121,21 +123,21 @@ app.post("/api/projects", async (req, res) => {
 
     // 1. projects 테이블에 프로젝트 생성
     const projectSql =
-      "INSERT INTO projects (name, description, owner_id) VALUES (?, ?, ?)";
+      "INSERT INTO projects (name, content, created_by) VALUES (?, ?, ?)";
     const [projectResult] = await connection.query(projectSql, [
       name,
-      description,
-      owner_id,
+      content,
+      created_by,
     ]);
     const projectId = projectResult.insertId;
 
     // 2. project_members 테이블에 소유자를 'manager'로 추가
     const memberSql =
       "INSERT INTO project_members (project_id, user_id, role_in_project) VALUES (?, ?, ?)";
-    await connection.query(memberSql, [projectId, owner_id, "manager"]);
+    await connection.query(memberSql, [projectId, created_by, "manager"]);
 
     // 3. 활동 로그 기록
-    await logActivity(owner_id, projectId, null, "PROJECT_CREATED", {
+    await logActivity(created_by, projectId, null, "PROJECT_CREATED", {
       projectName: name,
     });
 
@@ -270,6 +272,7 @@ app.delete("/api/projects/:id", (req, res) => {
     res.json({ message: "프로젝트가 성공적으로 삭제되었습니다." });
   });
 });
+
 
 // --- 3. 업무 API (Tasks) ---
 
@@ -485,6 +488,36 @@ app.post("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
+// --- 5. 프로필 API ---
+app.get("/api/profile", (req, res) => {
+  // 프론트에서 user_id 를 쿼리 파라미터 또는 헤더로 전달한다고 가정
+  const userId = req.query.user_id; // 또는 req.headers['user-id']
+
+  if (!userId) {
+    return res.status(400).json({ error: "사용자 ID가 필요합니다." });
+  }
+
+  const sql = `
+    SELECT user_id AS id, username AS name, email, created_at AS createdAt
+    FROM users
+    WHERE user_id = ?
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error fetching profile:", err);
+      return res
+        .status(500)
+        .json({ error: "프로필 정보를 불러오는 중 오류가 발생했습니다." });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "사용자를 찾을 수 없습니다." });
+    }
+
+    res.json(results[0]);
+  });
+});
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
