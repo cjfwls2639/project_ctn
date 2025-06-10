@@ -59,6 +59,11 @@
   color: white;
 }
 
+.action-btn.quinary {
+  background-color: #009688;
+  color: white;
+}
+
 .action-btn:hover {
   opacity: 0.9;
   transform: translateY(-1px);

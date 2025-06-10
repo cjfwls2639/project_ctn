@@ -1,9 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './MainPage.css';
-import './components/Sidebar.css';
-import './components/NavigationBar.css';
-import './components/MainContent.css';
+import './styles/MainPage.css';
+import './styles/Sidebar.css';
+import './styles/NavigationBar.css';
+import './styles/MainContent.css';
 
 const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   const [projectName, setProjectName] = React.useState('');
@@ -134,6 +134,13 @@ const calculateDday = (dateString) => {
             { label: '업무 마감일 알림', value: ` : ON` },
             { label: '회의 알림', value: ` : ON` },
             { label: '업데이트 알림', value: ` : ON` }
+          ]
+        },
+        사용자: {
+          title: '사용자',
+          content: [
+            { label: '사용자 이름', value: ` : 김철수` },
+            { label: '사용자 권한', value: ` : 관리자` }
           ]
         }
       };
@@ -302,6 +309,12 @@ const calculateDday = (dateString) => {
                       onClick={() => setSelectedTab('알람')}
                     >
                       알람
+                    </button>
+                    <button 
+                      className="action-btn quinary" 
+                      onClick={() => setSelectedTab('사용자')}
+                    >
+                      사용자
                     </button>
                   </div>
                 )}
