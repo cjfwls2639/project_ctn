@@ -45,7 +45,7 @@ CREATE TABLE task_assignees (
 );
 
 CREATE TABLE posts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  post_id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   author_id INT NOT NULL,
