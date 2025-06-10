@@ -20,16 +20,26 @@ CREATE TABLE admins (
 CREATE TABLE projects (
     project_id INT AUTO_INCREMENT PRIMARY KEY,
     project_name VARCHAR(20) NOT NULL,
+    content VARCHAR(100),
     created_by INT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(user_id)
+);
+
+CREATE TABLE project_members (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    user_id INT NOT NULL,
+    role_in_project VARCHAR(50) NOT NULL DEFAULT 'member', -- manager: 관리자 / member: 참여자
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT PRIMARY KEY,
     project_id INT NOT NULL,
     title VARCHAR(20) NOT NULL,
-    description VARCHAR(100),
+    content VARCHAR(100),
     due_date DATE,
     status ENUM('todo', 'doing', 'done') DEFAULT 'todo',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
