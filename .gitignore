@@ -1,24 +1,27 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# .gitignore 파일 내용
 
-# dependencies
-/node_modules
-/backend/node_modules
-/.pnp
-.pnp.js
+# 의존성 패키지 (필수!)
+# 이 폴더는 npm install을 통해 각자 로컬에서 생성합니다.
+node_modules/
 
-# testing
-/coverage
+# 환경 변수 파일 (필수!)
+# 이 파일에는 DB 비밀번호 등 민감한 정보가 포함됩니다.
+.env
 
-# production
-/build
+# 빌드 결과물 폴더
+# 나중에 코드를 배포용으로 빌드할 때 생성될 수 있는 폴더입니다.
+dist/
+build/
 
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
+# 로그 파일
+# 서버 실행 중 생성되는 로그 파일들을 무시합니다.
+*.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+
+# 운영체제에서 자동 생성되는 파일
+# (macOS, Windows 등)
+.DS_Store
+Thumbs.db
+
+# 에디터(VSCode) 설정 파일
+.vscode/

@@ -44,10 +44,6 @@ CREATE TABLE task_assignees (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-/*
-  'posts' 테이블의 FOREIGN KEY가 'users(id)'를 참조하고 있어
-  'users(user_id)'로 수정했습니다.
-*/
 CREATE TABLE posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
