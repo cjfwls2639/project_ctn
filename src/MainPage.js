@@ -216,7 +216,43 @@ const MainPage = () => {
       <div className="main-container">
         <div className="content-wrapper">
           <nav className="navbar">
-            {/* ... Navbar 내용은 기존과 거의 동일 ... */}
+          <nav className="navbar">
+            <div className="navbar-brand">
+              <h1 onClick={() => navigate('/main')}>To Be Continew</h1>
+            </div>
+          <div className="navbar-controls">
+            <div className="alarm-dropdown" onClick={toggleAlarmMenu}>
+              <button className="alarm-btn">
+                🔔
+                {alarmCount > 0 && (
+                  <span className="alarm-badge">{alarmCount}</span>
+                )}
+              </button>
+              <div className="alarm-menu" style={{ display: isAlarmMenuOpen ? 'block' : 'none' }}>
+                {alarmCount > 0 ? (
+                  <div className="alarm-item">새로운 알림이 {alarmCount}개 있습니다</div>
+                ) : (
+                  <div className="alarm-item">새로운 알림이 없습니다</div>
+                )}
+              </div>
+            </div>
+            <div className="auth-dropdown" onClick={toggleAccountMenu}>
+              <button className="auth-btn">
+                <span className="material-icons">account_circle</span>
+              </button>
+              <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
+                <a className="auth-menu-item" onClick={() => navigate('/profile')}>
+                  <span className="material-icons">person</span>
+                  <span>내 정보 변경</span>
+                </a>
+                <a className="auth-menu-item" onClick={handleLogout}>
+                  <span className="material-icons">logout</span>
+                  <span>로그아웃</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </nav>
           </nav>
           <aside className="sidebar">
             <div className="sidebar-header">
@@ -263,7 +299,43 @@ const MainPage = () => {
               <>
                 <h1 className="project-title">{selectedProject.name}</h1>
                 <div className="content-container">
-                  <div className="project-info">{/* ... 탭 버튼 UI ... */}</div>
+                  <div className="project-info">{selectedProject !== null && (
+                  <div className="action-buttons">
+                    <button 
+                      className="action-btn primary" 
+                      onClick={() => setSelectedTab('메인')}
+                    >
+                      메인
+                    </button>
+                    <button 
+                      className="action-btn secondary" 
+                      onClick={() => setSelectedTab('업무')}
+                    >
+                      업무
+                    </button>
+                    <button 
+                      className="action-btn tertiary" 
+                      onClick={() => setSelectedTab('로그')}
+                    >
+                      로그
+                    </button>
+                    <button 
+                      className="action-btn quaternary" 
+                      onClick={() => setSelectedTab('알람')}
+                    >
+                      알람
+                    </button>
+                    <button 
+                      className="action-btn quinary" 
+                      onClick={() => setSelectedTab('사용자')}
+                    >
+                      사용자
+                    </button>
+                  </div>
+                )}
+                {selectedProject === null && (
+                  <p>프로젝트를 선택해주세요</p>
+                )}</div>
                   <div className="project-details-content">
                     {/* TODO: 이 부분도 동적으로 DB 데이터와 연결 (예시: selectedProject.description) */}
                     <h2>{selectedTab} 현황</h2>
