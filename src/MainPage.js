@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from '../backend/axios.js';
+import axios from './api/axios.js';
 import './styles/MainPage.css';
-import './styles/Sidebar.css';
+import './styles/Sidebar.css';  
 import './styles/NavigationBar.css';
 import './styles/MainContent.css';
 

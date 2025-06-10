@@ -1,4 +1,4 @@
-import axios from './backend/axios';
+import axios from 'axios';
 
 // 특정 사용자의 프로젝트 목록 가져오기
 axios.get('http://localhost:5000/api/projects?userId=1')
