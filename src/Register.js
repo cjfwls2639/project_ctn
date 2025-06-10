@@ -1,8 +1,5 @@
-// src/Register.js
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-// './api/axios.js'는 baseURL이 설정된 우리가 만든 axios 인스턴스입니다.
 import axios from "./api/axios.js";
 import "./styles/Register.css";
 
@@ -23,14 +20,12 @@ function Register() {
       ...prev,
       [name]: value,
     }));
-    // 입력이 변경되면 해당 필드의 에러는 지워주는 것이 사용자 경험에 좋습니다.
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: null }));
     }
   };
 
   const validateForm = () => {
-    // ... validateForm 함수는 기존과 동일합니다.
     const newErrors = {};
 
     if (!formData.username.trim()) {
