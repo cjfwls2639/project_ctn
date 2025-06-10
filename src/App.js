@@ -5,6 +5,7 @@ import Register from './Register';
 import MainPage from './MainPage';
 import Profile from './profile';
 
+
 function App() {
   return (
     <Router>
