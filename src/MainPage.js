@@ -17,7 +17,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
       onSubmit({
         name: projectName,
         dDay: dDay,
-        description: description,
+        content : description,
       });
       onClose();
     }
@@ -163,7 +163,7 @@ const MainPage = () => {
     try {
       const response = await axios.post("/api/projects", {
         name: projectData.name,
-        description: projectData.description,
+        content : projectData.content,
         owner_id: user.user_id, // 로그인한 사용자 ID를 owner_id로 전달
       });
       alert(response.data.message);
