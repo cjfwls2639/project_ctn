@@ -6,21 +6,23 @@ const Profile = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/profile")
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json();
-      })
-      .then(data => {
-        setUserData(data);
-      })
-      .catch(error => {
-        setError("프로필 정보를 불러오는 데 실패했습니다.");
-        console.error("Error fetching profile data:", error);
-      });
-  }, []);
+  const userId = localStorage.getItem("user_id"); // 로그인 시 저장했다고 가정
+
+  fetch(`http://localhost:5000/api/profile?user_id=${userId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      setUserData(data);
+    })
+    .catch(error => {
+      setError("프로필 정보를 불러오는 데 실패했습니다.");
+      console.error("Error fetching profile data:", error);
+    });
+}, []);
 
   return (
     <div className="profile-container">
