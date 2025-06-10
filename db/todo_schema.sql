@@ -1,5 +1,3 @@
--- todo 프로젝트용 데이터베이스 스키마 생성
-
 CREATE DATABASE IF NOT EXISTS todo
 CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
@@ -46,13 +44,17 @@ CREATE TABLE task_assignees (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+/*
+  'posts' 테이블의 FOREIGN KEY가 'users(id)'를 참조하고 있어
+  'users(user_id)'로 수정했습니다.
+*/
 CREATE TABLE posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   author_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE comments (
