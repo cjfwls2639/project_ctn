@@ -374,31 +374,67 @@ app.post("/api/projects/:projectId/tasks", (req, res) => {
   );
 });
 
-// 3.3. 특정 업무 상세 정보 가져오기 (READ ONE)
-app.get("/api/tasks/:id", (req, res) => {
-  const { id } = req.params;
+// 3.3 특정 task의 작업자와 post 가져오기
+app.get("/api/tasks/:taskId", async (req, res) => {
+  // 1. URL 경로에서 특정 업무의 ID를 추출합니다.
+  const { taskId } = req.params;
+
+  // 2. 업무 상세, 담당자, 게시물 목록을 한 번에 가져오는 통합 쿼리
   const sql = `
-        SELECT
-            t.*,
-            creator.username AS created_by_username,
-            assignee.username AS assigned_to_username
-        FROM tasks t
-        JOIN users creator ON t.created_by_user_id = creator.id
-        LEFT JOIN users assignee ON t.assigned_to_user_id = assignee.id
-        WHERE t.id = ?
-    `;
-  db.query(sql, [id], (err, result) => {
-    if (err) {
-      console.error("Error fetching task:", err);
-      return res
-        .status(500)
-        .json({ error: "업무 정보를 불러오는 중 오류가 발생했습니다." });
+    SELECT
+        t.*,
+        -- 담당자 목록을 JSON 배열 형태로 가져옵니다.
+        (
+            SELECT JSON_ARRAYAGG(
+                JSON_OBJECT('user_id', u.user_id, 'username', u.username)
+            )
+            FROM task_assignees ta
+            JOIN users u ON ta.user_id = u.user_id
+            WHERE ta.task_id = t.task_id
+        ) AS assignees,
+        
+        -- 게시물 목록을 JSON 배열 형태로 가져옵니다.
+        (
+            SELECT JSON_ARRAYAGG(
+                JSON_OBJECT(
+                    'post_id', p.id,
+                    'title', p.title,
+                    'author_id', p.author_id,
+                    'author_username', author.username,
+                    'created_at', p.created_at
+                )
+            )
+            FROM posts p
+            JOIN users author ON p.author_id = author.user_id
+            WHERE p.task_id = t.task_id
+        ) AS posts
+    FROM
+        tasks AS t
+    WHERE
+        t.task_id = ?;
+  `;
+
+  // 3. 데이터베이스 작업 중 발생할 수 있는 오류를 처리하기 위해 try...catch 사용
+  try {
+    // 4. 데이터베이스에 쿼리를 실행합니다. 
+    // db.promise()를 사용하여 async/await 구문을 활용합니다.
+    const [rows] = await db.promise().query(sql, [taskId]);
+
+    // 5. 쿼리 결과 확인 및 클라이언트에게 응답 전송
+    if (rows.length === 0) {
+      // 해당 ID의 업무를 찾지 못했을 경우
+      return res.status(404).json({ message: "해당 ID의 업무를 찾을 수 없습니다." });
     }
-    if (result.length === 0) {
-      return res.status(404).json({ message: "업무를 찾을 수 없습니다." });
-    }
-    res.json(result[0]);
-  });
+    
+    // 성공적으로 조회된 업무 정보를 JSON 형태로 전송합니다.
+    // 결과의 assignees와 posts는 이미 JSON 배열 형태로 포함되어 있습니다.
+    res.status(200).json(rows[0]);
+
+  } catch (err) {
+    // 6. 데이터베이스 작업 중 에러 발생 시 처리
+    console.error("업무 상세 정보 조회 중 에러 발생:", err);
+    res.status(500).json({ error: "서버 내부 오류가 발생했습니다." });
+  }
 });
 
 // 3.4. 업무 정보 수정 (UPDATE)
