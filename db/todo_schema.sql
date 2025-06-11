@@ -20,7 +20,7 @@ CREATE TABLE admins (
 CREATE TABLE projects (
     project_id INT AUTO_INCREMENT PRIMARY KEY,
     project_name VARCHAR(20) NOT NULL,
-    content VARCHAR(100),
+    content VARCHAR(255),
     created_by INT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(user_id)
@@ -39,7 +39,7 @@ CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT PRIMARY KEY,
     project_id INT NOT NULL,
     title VARCHAR(20) NOT NULL,
-    content VARCHAR(100),
+    content VARCHAR(255),
     due_date DATE,
     status ENUM('todo', 'doing', 'done') DEFAULT 'todo',
     created_by_user_id INT NOT NULL,
@@ -58,16 +58,11 @@ CREATE TABLE task_assignees (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> b6b0e94ca3e2c5a3a196b7476f2f1b8e8a794e43
 CREATE TABLE comments (
     comment_id INT AUTO_INCREMENT PRIMARY KEY,
     task_id INT NOT NULL,
     user_id INT NOT NULL,
-    content VARCHAR(30) NOT NULL,
+    content VARCHAR(255) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (task_id) REFERENCES tasks(task_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
@@ -77,7 +72,7 @@ CREATE TABLE activity_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     task_id INT NOT NULL,
     user_id INT NOT NULL,
-    behavior VARCHAR(100) NOT NULL,
+    behavior VARCHAR(255) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (task_id) REFERENCES tasks(task_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
