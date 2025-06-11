@@ -58,8 +58,11 @@ CREATE TABLE task_assignees (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> b6b0e94ca3e2c5a3a196b7476f2f1b8e8a794e43
 CREATE TABLE comments (
     comment_id INT AUTO_INCREMENT PRIMARY KEY,
     task_id INT NOT NULL,
