@@ -351,8 +351,8 @@ app.get("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const sql = `
         SELECT t.*, GROUP_CONCAT(u.username SEPARATOR ', ') AS assignees
-        FROM tasks AS t LEFT JOIN task_assignees AS ta ON t.task_id = ta.task_id
-        LEFT JOIN users AS u ON ta.user_id = u.user_id
+        FROM tasks as t LEFT JOIN task_assignees as ta ON t.task_id = ta.task_id
+        LEFT JOIN users as u ON ta.user_id = u.user_id
         WHERE t.project_id = ?
         GROUP BY t.task_id
         ORDER BY t.created_at DESC;
@@ -373,7 +373,7 @@ app.post("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const {
     title,
-    description,
+    content,
     status,
     due_date,
     assigned_to_user_id,
@@ -388,7 +388,7 @@ app.post("/api/projects/:projectId/tasks", (req, res) => {
 
   const sql = `
         INSERT INTO tasks
-        (project_id, title, description, status, due_date, assigned_to_user_id, created_by_user_id)
+        (project_id, title, content, status, due_date, assigned_to_user_id, created_by_user_id)
         VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
   db.query(
@@ -396,7 +396,7 @@ app.post("/api/projects/:projectId/tasks", (req, res) => {
     [
       projectId,
       title,
-      description,
+      content,
       status || "To Do",
       due_date,
       assigned_to_user_id,
@@ -448,16 +448,15 @@ app.get("/api/tasks/:taskId", async (req, res) => {
                     'post_id', p.id,
                     'title', p.title,
                     'author_id', p.author_id,
-                    'author_username', author.username,
                     'created_at', p.created_at
                 )
             )
-            FROM posts p
-            JOIN users author ON p.author_id = author.user_id
+            FROM posts as p
+            JOIN users as author ON p.author_id = author.user_id
             WHERE p.task_id = t.task_id
-        ) AS posts
+        ) as posts
     FROM
-        tasks AS t
+        tasks as t
     WHERE
         t.task_id = ?;
   `;
@@ -495,12 +494,12 @@ app.put("/api/tasks/:id", (req, res) => {
   // TODO: 변경된 필드만 감지하여 동적 쿼리 생성 및 활동 로그 상세 기록
   const sql = `
         UPDATE tasks SET
-        title = ?, description = ?, status = ?, due_date = ?, assigned_to_user_id = ?
+        title = ?, content = ?, status = ?, due_date = ?, assigned_to_user_id = ?
         WHERE id = ?
     `;
   db.query(
     sql,
-    [title, description, status, due_date, assigned_to_user_id, id],
+    [title, content, status, due_date, assigned_to_user_id, id],
     (err, result) => {
       if (err) {
         console.error("Error updating task:", err);
