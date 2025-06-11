@@ -75,21 +75,22 @@ const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   );
 };
 
-const calculateDday = (dateString) => {
-  if (!dateString) return "미설정";
+//d-day 계산 함수
+// const calculateDday = (dateString) => {
+//   if (!dateString) return "미설정";
 
-  const targetDate = new Date(dateString);
-  const today = new Date();
-  const diff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+//   const targetDate = new Date(dateString);
+//   const today = new Date();
+//   const diff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
 
-  if (diff > 0) {
-    return `D-${diff}`;
-  } else if (diff === 0) {
-    return "D-Day";
-  } else {
-    return `D+${Math.abs(diff)}`;
-  }
-};
+//   if (diff > 0) {
+//     return `D-${diff}`;
+//   } else if (diff === 0) {
+//     return "D-Day";
+//   } else {
+//     return `D+${Math.abs(diff)}`;
+//   }
+// };
 
 const MainPage = () => {
   const navigate = useNavigate();
@@ -143,34 +144,38 @@ const MainPage = () => {
     }
   }, [user, navigate, selectedProjectId]);
 
+  //알람 불러오기
   const fetchAlarms = async () => {
     try {
-      setLoading(true); // 요청 시작 시 로딩 상태로 설정
-      setError(null);     // 이전 에러 상태 초기화
+      setLoading(true); 
+      setError(null);    
 
-      // API GET 요청 (백엔드 서버 주소는 실제 환경에 맞게 수정하세요)
       const response = await axios.get(`/api/tasks/due_date?userId=${user.user_id}`);
       
-      setAlarms(response.data); // 성공 시 상태에 데이터 저장
-      setAlarmCount(response.data.length); // 알림 개수 설정
+      setAlarms(response.data); 
+      setAlarmCount(response.data.length); 
     } catch (err) {
       console.error("마감 임박 태스크를 불러오는 중 오류 발생:", err);
-      setError("알림을 불러오는 데 실패했습니다."); // 에러 발생 시 에러 상태 설정
+      setError("알림을 불러오는 데 실패했습니다."); 
     } finally {
-      setLoading(false); // 요청 완료 시 로딩 상태 해제
+      setLoading(false); 
     }
   };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    const user_id = user.user_id;
-    if (user_id) {
-      fetchProjects();
-      fetchAlarms();
+    if(user){
+      const user_id = user.user_id;
+      if (user_id) {
+        fetchProjects();
+        fetchAlarms();
+      }else{
+        navigate("/login");
+      } 
     }else{
       navigate("/login");
     }
-  }, [user]);
+  }, [user, fetchAlarms, fetchProjects, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem("user"); // 로그아웃 시 사용자 정보 제거
@@ -240,17 +245,12 @@ const MainPage = () => {
   }
 };
 
-  // ... toggle 함수, 모달 여닫는 함수는 기존과 동일 ...
   const toggleAccountMenu = () => setIsAccountMenuOpen(!isAccountMenuOpen);
   const toggleAlarmMenu = () => setIsAlarmMenuOpen(!isAlarmMenuOpen);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  // CHANGED: 선택된 프로젝트 객체 찾기
   const selectedProject = projects.find((p) => p.id === selectedProjectId);
-
-  // ... 중략 (나머지 렌더링 로직은 아래에서 확인) ...
-  // `details` 객체는 이제 selectedProject를 기반으로 동적으로 생성되어야 합니다.
 
   return (
     <div>
@@ -300,14 +300,14 @@ const MainPage = () => {
                 <span className="material-icons">account_circle</span>
               </button>
               <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
-                <a className="auth-menu-item" onClick={() => navigate('/profile')}>
+                <button className="auth-menu-item" onClick={() => navigate('/profile')}>
                   <span className="material-icons">person</span>
                   <span>내 정보 변경</span>
-                </a>
-                <a className="auth-menu-item" onClick={handleLogout}>
+                </button>
+                <button className="auth-menu-item" onClick={handleLogout}>
                   <span className="material-icons">logout</span>
                   <span>로그아웃</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>
