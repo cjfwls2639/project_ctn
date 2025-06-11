@@ -183,6 +183,7 @@ const MainPage = () => {
       alert("사용자 정보가 없습니다. 다시 로그인해주세요.");
       return;
     }
+
     try {
       const response = await axios.post("/api/projects", {
         name: projectData.name,
@@ -204,23 +205,40 @@ const MainPage = () => {
       alert("삭제할 프로젝트를 선택해주세요.");
       return;
     }
-    if (
-      window.confirm(
-        "프로젝트를 삭제하시겠습니까? 관련된 모든 업무와 댓글이 삭제됩니다."
-      )
-    ) {
-      try {
-        const response = await axios.delete(
-          `/api/projects/${selectedProjectId}`
-        );
-        alert(response.data.message);
-        await fetchProjects(); // 프로젝트 삭제 후 목록을 다시 불러옵니다.
-      } catch (error) {
-        console.error("프로젝트 삭제 실패:", error);
-        alert("프로젝트 삭제 중 오류가 발생했습니다.");
-      }
+    
+  // 현재 로그인된 사용자 정보 가져오기
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (!user || !user.user_id) { // 로그인 여부 확인
+    alert("로그인이 필요합니다.");
+    navigate("/login");
+    return;
+  }
+
+  if (
+    window.confirm(
+      "프로젝트를 삭제하시겠습니까? 관련된 모든 업무와 댓글이 삭제됩니다."
+    )
+  ) {
+    try {
+      const response = await axios.delete(
+        `/api/projects/${selectedProjectId}`,
+        {
+          // 요청 본문에 ownerId를 포함하여 보냅니다.
+          // 실제 DELETE 요청은 body를 잘 사용하지 않으므로, header나 query parameter로 보내는 것을 권장하지만,
+          // 여기서는 간단하게 body로 보내는 예시를 보여줍니다.
+          // 더 나은 방법: 요청 헤더에 Authorization 토큰을 보내는 인증 미들웨어 사용 (더 복잡)
+          data: { userId: user.user_id } // <-- 이 부분을 추가합니다.
+        }
+      );
+      alert(response.data.message);
+      await fetchProjects();
+    } catch (error) {
+      console.error("프로젝트 삭제 실패:", error);
+      // 서버에서 보낸 에러 메시지가 있다면 사용
+      alert(error.response?.data?.error || "프로젝트 삭제 중 오류가 발생했습니다.");
     }
-  };
+  }
+};
 
   // ... toggle 함수, 모달 여닫는 함수는 기존과 동일 ...
   const toggleAccountMenu = () => setIsAccountMenuOpen(!isAccountMenuOpen);
