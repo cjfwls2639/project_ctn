@@ -5,7 +5,7 @@ import "./styles/MainPage.css";
 import "./styles/Sidebar.css";
 import "./styles/NavigationBar.css";
 import "./styles/MainContent.css";
-//commitㅗ
+//comm
 const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   const [projectName, setProjectName] = useState("");
   const [dDay, setDDay] = useState("");
@@ -17,7 +17,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
       onSubmit({
         name: projectName,
         dDay: dDay,
-        content : content
+        content: content,
       });
       onClose();
     }
@@ -109,7 +109,7 @@ const MainPage = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR');
+    return date.toLocaleDateString("ko-KR");
   };
 
   const fetchProjects = useCallback(async () => {
@@ -147,33 +147,33 @@ const MainPage = () => {
   //알람 불러오기
   const fetchAlarms = async () => {
     try {
-      setLoading(true); 
-      setError(null);    
+      setLoading(true);
+      setError(null);
 
       const response = await axios.get(`/api/tasks/due_date?userId`, {
-        params: { userId: user.user_id }, 
+        params: { userId: user.user_id },
       });
-      
-      setAlarms(response.data); 
-      setAlarmCount(response.data.length); 
+
+      setAlarms(response.data);
+      setAlarmCount(response.data.length);
     } catch (err) {
       console.error("알림을 불러오는 중 오류 발생:", err);
-      setError("알림을 불러오는 데 실패했습니다."); 
+      setError("알림을 불러오는 데 실패했습니다.");
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user"));
-    if(user){
+    if (user) {
       const user_id = user.user_id;
       if (user_id) {
         fetchAlarms();
-      }else{
+      } else {
         navigate("/login");
-      } 
-    }else{
+      }
+    } else {
       navigate("/login");
     }
   }, [user, fetchAlarms, navigate]);
@@ -197,7 +197,7 @@ const MainPage = () => {
     try {
       const response = await axios.post("/api/projects", {
         name: projectData.name,
-        content : projectData.content,
+        content: projectData.content,
         owner_id: user.user_id, // 로그인한 사용자 ID를 owner_id로 전달
       });
       alert(response.data.message);
@@ -215,40 +215,43 @@ const MainPage = () => {
       alert("삭제할 프로젝트를 선택해주세요.");
       return;
     }
-    
-  // 현재 로그인된 사용자 정보 가져오기
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user || !user.user_id) { // 로그인 여부 확인
-    alert("로그인이 필요합니다.");
-    navigate("/login");
-    return;
-  }
 
-  if (
-    window.confirm(
-      "프로젝트를 삭제하시겠습니까? 관련된 모든 업무와 댓글이 삭제됩니다."
-    )
-  ) {
-    try {
-      const response = await axios.delete(
-        `/api/projects/${selectedProjectId}`,
-        {
-          // 요청 본문에 ownerId를 포함하여 보냅니다.
-          // 실제 DELETE 요청은 body를 잘 사용하지 않으므로, header나 query parameter로 보내는 것을 권장하지만,
-          // 여기서는 간단하게 body로 보내는 예시를 보여줍니다.
-          // 더 나은 방법: 요청 헤더에 Authorization 토큰을 보내는 인증 미들웨어 사용 (더 복잡)
-          data: { userId: user.user_id } // <-- 이 부분을 추가합니다.
-        }
-      );
-      alert(response.data.message);
-      await fetchProjects();
-    } catch (error) {
-      console.error("프로젝트 삭제 실패:", error);
-      // 서버에서 보낸 에러 메시지가 있다면 사용
-      alert(error.response?.data?.error || "프로젝트 삭제 중 오류가 발생했습니다.");
+    // 현재 로그인된 사용자 정보 가져오기
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.user_id) {
+      // 로그인 여부 확인
+      alert("로그인이 필요합니다.");
+      navigate("/login");
+      return;
     }
-  }
-};
+
+    if (
+      window.confirm(
+        "프로젝트를 삭제하시겠습니까? 관련된 모든 업무와 댓글이 삭제됩니다."
+      )
+    ) {
+      try {
+        const response = await axios.delete(
+          `/api/projects/${selectedProjectId}`,
+          {
+            // 요청 본문에 ownerId를 포함하여 보냅니다.
+            // 실제 DELETE 요청은 body를 잘 사용하지 않으므로, header나 query parameter로 보내는 것을 권장하지만,
+            // 여기서는 간단하게 body로 보내는 예시를 보여줍니다.
+            // 더 나은 방법: 요청 헤더에 Authorization 토큰을 보내는 인증 미들웨어 사용 (더 복잡)
+            data: { userId: user.user_id }, // <-- 이 부분을 추가합니다.
+          }
+        );
+        alert(response.data.message);
+        await fetchProjects();
+      } catch (error) {
+        console.error("프로젝트 삭제 실패:", error);
+        // 서버에서 보낸 에러 메시지가 있다면 사용
+        alert(
+          error.response?.data?.error || "프로젝트 삭제 중 오류가 발생했습니다."
+        );
+      }
+    }
+  };
 
   const toggleAccountMenu = () => setIsAccountMenuOpen(!isAccountMenuOpen);
   const toggleAlarmMenu = () => setIsAlarmMenuOpen(!isAlarmMenuOpen);
@@ -262,61 +265,70 @@ const MainPage = () => {
       <div className="main-container">
         <div className="content-wrapper">
           <nav className="navbar">
-          <nav className="navbar">
-            <div className="navbar-brand">
-              <h1 onClick={() => navigate('/main')}>To Be Continew</h1>
-            </div>
-          <div className="navbar-controls">
-            <div className="alarm-dropdown" onClick={toggleAlarmMenu}>
-              <button className="alarm-btn">
-                🔔
-                {alarmCount > 0 && (
-                  <span className="alarm-badge">{alarmCount}</span>
-                )}
-              </button>
-              <div className="alarm-menu" style={{ display: isAlarmMenuOpen ? 'block' : 'none' }}>
-                      {loading ? (
-                  <div className="alarm-item">로딩 중...</div>
-                ) : error ? (
-                  <div className="alarm-item error">{error}</div>
-                ) : alarmCount > 0 ? (
-                  // 데이터가 있을 경우, ul과 li로 목록 렌더링
-                  <ul className="alarm-list">
-                    <li className="alarm-header">
-                      마감 임박 태스크 ({alarmCount}개)
-                    </li>
-                    {alarms.map(task => (
-                      // map 사용 시 각 항목은 고유한 'key' prop을 가져야 합니다.
-                      <li key={task.task_id} className="alarm-item">
-                        <div className="task-title">{task.title}</div>
-                        <div className="task-due-date">
-                          마감일: {formatDate(task.due_date)}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="alarm-item">알림이 없습니다.</div>
-                )}
+            <nav className="navbar">
+              <div className="navbar-brand">
+                <h1 onClick={() => navigate("/main")}>To Be Continew</h1>
               </div>
-            </div>
-            <div className="auth-dropdown" onClick={toggleAccountMenu}>
-              <button className="auth-btn">
-                <span className="material-icons">account_circle</span>
-              </button>
-              <div className="auth-menu" style={{ display: isAccountMenuOpen ? 'block' : 'none' }}>
-                <button className="auth-menu-item" onClick={() => navigate('/profile')}>
-                  <span className="material-icons">person</span>
-                  <span>내 정보 변경</span>
-                </button>
-                <button className="auth-menu-item" onClick={handleLogout}>
-                  <span className="material-icons">logout</span>
-                  <span>로그아웃</span>
-                </button>
+              <div className="navbar-controls">
+                <div className="alarm-dropdown" onClick={toggleAlarmMenu}>
+                  <button className="alarm-btn">
+                    🔔
+                    {alarmCount > 0 && (
+                      <span className="alarm-badge">{alarmCount}</span>
+                    )}
+                  </button>
+                  <div
+                    className="alarm-menu"
+                    style={{ display: isAlarmMenuOpen ? "block" : "none" }}
+                  >
+                    {loading ? (
+                      <div className="alarm-item">로딩 중...</div>
+                    ) : error ? (
+                      <div className="alarm-item error">{error}</div>
+                    ) : alarmCount > 0 ? (
+                      // 데이터가 있을 경우, ul과 li로 목록 렌더링
+                      <ul className="alarm-list">
+                        <li className="alarm-header">
+                          마감 임박 태스크 ({alarmCount}개)
+                        </li>
+                        {alarms.map((task) => (
+                          // map 사용 시 각 항목은 고유한 'key' prop을 가져야 합니다.
+                          <li key={task.task_id} className="alarm-item">
+                            <div className="task-title">{task.title}</div>
+                            <div className="task-due-date">
+                              마감일: {formatDate(task.due_date)}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="alarm-item">알림이 없습니다.</div>
+                    )}
+                  </div>
+                </div>
+                <div className="auth-dropdown" onClick={toggleAccountMenu}>
+                  <button className="auth-btn">
+                    <span className="material-icons">account_circle</span>
+                  </button>
+                  <div
+                    className="auth-menu"
+                    style={{ display: isAccountMenuOpen ? "block" : "none" }}
+                  >
+                    <button
+                      className="auth-menu-item"
+                      onClick={() => navigate("/profile")}
+                    >
+                      <span className="material-icons">person</span>
+                      <span>내 정보 변경</span>
+                    </button>
+                    <button className="auth-menu-item" onClick={handleLogout}>
+                      <span className="material-icons">logout</span>
+                      <span>로그아웃</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </nav>
+            </nav>
           </nav>
           <aside className="sidebar">
             <div className="sidebar-header">
@@ -363,43 +375,43 @@ const MainPage = () => {
               <>
                 <h1 className="project-title">{selectedProject.name}</h1>
                 <div className="content-container">
-                  <div className="project-info">{selectedProject !== null && (
-                  <div className="action-buttons">
-                    <button 
-                      className="action-btn primary" 
-                      onClick={() => setSelectedTab('메인')}
-                    >
-                      메인
-                    </button>
-                    <button 
-                      className="action-btn secondary" 
-                      onClick={() => setSelectedTab('업무')}
-                    >
-                      업무
-                    </button>
-                    <button 
-                      className="action-btn tertiary" 
-                      onClick={() => setSelectedTab('로그')}
-                    >
-                      로그
-                    </button>
-                    <button 
-                      className="action-btn quaternary" 
-                      onClick={() => setSelectedTab('알람')}
-                    >
-                      알람
-                    </button>
-                    <button 
-                      className="action-btn quinary" 
-                      onClick={() => setSelectedTab('사용자')}
-                    >
-                      사용자
-                    </button>
+                  <div className="project-info">
+                    {selectedProject !== null && (
+                      <div className="action-buttons">
+                        <button
+                          className="action-btn primary"
+                          onClick={() => setSelectedTab("메인")}
+                        >
+                          메인
+                        </button>
+                        <button
+                          className="action-btn secondary"
+                          onClick={() => setSelectedTab("업무")}
+                        >
+                          업무
+                        </button>
+                        <button
+                          className="action-btn tertiary"
+                          onClick={() => setSelectedTab("로그")}
+                        >
+                          로그
+                        </button>
+                        <button
+                          className="action-btn quaternary"
+                          onClick={() => setSelectedTab("알람")}
+                        >
+                          알람
+                        </button>
+                        <button
+                          className="action-btn quinary"
+                          onClick={() => setSelectedTab("사용자")}
+                        >
+                          사용자
+                        </button>
+                      </div>
+                    )}
+                    {selectedProject === null && <p>프로젝트를 선택해주세요</p>}
                   </div>
-                )}
-                {selectedProject === null && (
-                  <p>프로젝트를 선택해주세요</p>
-                )}</div>
                   <div className="project-details-content">
                     {/* TODO: 이 부분도 동적으로 DB 데이터와 연결 (예시: selectedProject.description) */}
                     <h2>{selectedTab} 현황</h2>
