@@ -10,7 +10,7 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/main" replace />} /> //개발하는 동안 바로 메인가도록 해놓음
+        <Route path="/" element={<Navigate to="/login" replace />} /> 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/main" element={<MainPage />} />
