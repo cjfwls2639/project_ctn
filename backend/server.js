@@ -25,6 +25,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 const logActivity = async (logId, userId, projectId, taskId, actionType, details) => {
   const sql =
     "INSERT INTO activity_logs ( user_id, project_id, task_id, action_type, details) VALUES (?, ?, ?, ?, ?, ?)";
+    
 // Google OAuth2 클라이언트 설정
 // .env 파일에 GOOGLE_CLIENT_ID 설정 (예: 943180922128-xxxxxxxxxxxxxxxxxx.apps.googleusercontent.com)
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -1151,5 +1152,4 @@ async function startServer() {
 }
 
 startServer(); // 서버 시작
-
 }
