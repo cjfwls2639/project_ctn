@@ -38,7 +38,7 @@ CREATE TABLE project_members (
 CREATE TABLE tasks (
     task_id INT AUTO_INCREMENT PRIMARY KEY,
     project_id INT NOT NULL,
-    title VARCHAR(20) NOT NULL,
+    task_name VARCHAR(20) NOT NULL,
     content VARCHAR(255),
     due_date DATE,
     status ENUM('todo', 'doing', 'done') DEFAULT 'todo',
@@ -70,10 +70,14 @@ CREATE TABLE comments (
 
 CREATE TABLE activity_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
-    task_id INT NOT NULL,
     user_id INT NOT NULL,
-    behavior VARCHAR(255) NOT NULL,
+    project_id INT NOT NULL,
+    task_id INT,
+    action_type VARCHAR(255) NOT NULL,
+    details JSON,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (task_id) REFERENCES tasks(task_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE,
+   
 );
