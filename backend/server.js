@@ -105,6 +105,28 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+// 특정 사용자 정보 조회 (READ)
+app.get("/api/users/:id", (req, res) => {
+  const userId = req.params.id;
+
+  const sql =
+    "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?";
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error fetching user:", err);
+      return res
+        .status(500)
+        .json({ error: "사용자 정보 조회 중 오류가 발생했습니다." });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "사용자를 찾을 수 없습니다." });
+    }
+
+    res.json(results[0]);
+  });
+});
 
 // --- 2. 프로젝트 API (Projects) ---
 
@@ -232,12 +254,12 @@ app.get("/api/projects/:id", async (req, res) => {
 app.put("/api/projects/:id", (req, res) => {
   // TODO: 인증 로직 추가 (프로젝트 manager 또는 owner만 수정 가능하도록)
   const { id } = req.params;
-  const { name, description } = req.body;
+  const { name, content } = req.body;
   if (!name) {
     return res.status(400).json({ error: "프로젝트 이름은 필수입니다." });
   }
 
-  const sql = "UPDATE projects SET name = ?, description = ? WHERE id = ?";
+  const sql = "UPDATE projects SET name = ?, content = ? WHERE id = ?";
   db.query(sql, [name, description, id], (err, result) => {
     if (err) {
       console.error("Error updating project:", err);
@@ -515,7 +537,44 @@ app.get("/api/profile", (req, res) => {
     res.json(results[0]);
   });
 });
+
+//6. 알람 불러오기
+app.get("/api/tasks/due_date", (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res
+      .status(400)
+      .json({ error: "사용자 ID(userId) 쿼리 파라미터가 필요합니다." });
+  }
+
+  // due_date가 오늘부터 7일 이내이면서 해당 userId에게 할당된 태스크를 조회합니다.
+  // CURDATE(): 현재 날짜를 반환하는 SQL 함수 (MySQL 기준)
+  // INTERVAL 7 DAY: 현재 날짜에 7일을 더하는 연산
+  // BETWEEN A AND B: A와 B 사이에 있는 값 (A와 B 포함)
+  const sql = `
+    SELECT t.*
+    FROM task t
+    JOIN task_assignees ta ON t.task_id = ta.task_id
+    WHERE ta.user_id = ?
+      AND t.due_date IS NOT NULL
+      AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+    ORDER BY t.due_date ASC;
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error fetching tasks due soon:", err);
+      return res
+        .status(500)
+        .json({ error: "마감 임박 태스크 목록을 불러오는 중 오류가 발생했습니다." });
+    }
+    res.json(results);
+  });
+});
+
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
