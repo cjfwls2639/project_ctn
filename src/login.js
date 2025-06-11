@@ -7,7 +7,7 @@ import "./styles/login.css";
 
 // Google OAuth 클라이언트 ID를 여기에 입력하세요.
 // 이 ID는 Google Cloud Console에서 생성한 웹 애플리케이션 유형의 클라이언트 ID와 동일해야 합니다.
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'; // TODO: 실제 Google 클라이언트 ID로 변경하세요!
+const GOOGLE_CLIENT_ID = '943180922128-8ue7tfmovcfakjhfu42gf65mscrcejqt.apps.googleusercontent.com'; // TODO: 실제 Google 클라이언트 ID로 변경하세요!
 
 function Login() {
   const navigate = useNavigate();
