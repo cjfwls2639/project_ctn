@@ -5,7 +5,7 @@ import "./styles/MainPage.css";
 import "./styles/Sidebar.css";
 import "./styles/NavigationBar.css";
 import "./styles/MainContent.css";
-//comm
+//commit
 const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   const [projectName, setProjectName] = useState("");
   const [dDay, setDDay] = useState("");
