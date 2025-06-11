@@ -132,8 +132,8 @@ app.get("/api/users/:id", (req, res) => {
 
 // 2.1. 새로운 프로젝트 생성 (CREATE)
 app.post("/api/projects", async (req, res) => {
-  const { name, content, created_by } = req.body;
-  if (!name || !created_by) {
+  const { name, content, owner_id } = req.body;
+  if (!name || !owner_id) {
     return res
       .status(400)
       .json({ error: "프로젝트 이름을 입력 해주세요." });
@@ -145,18 +145,18 @@ app.post("/api/projects", async (req, res) => {
 
     // 1. projects 테이블에 프로젝트 생성
     const projectSql =
-      "INSERT INTO projects (name, content, created_by) VALUES (?, ?, ?)";
+      "INSERT INTO projects (project_name, content, created_by) VALUES (?, ?, ?)";
     const [projectResult] = await connection.query(projectSql, [
       name,
       content,
-      created_by,
+      owner_id,
     ]);
     const projectId = projectResult.insertId;
 
     // 2. project_members 테이블에 소유자를 'manager'로 추가
     const memberSql =
       "INSERT INTO project_members (project_id, user_id, role_in_project) VALUES (?, ?, ?)";
-    await connection.query(memberSql, [projectId, created_by, "manager"]);
+    await connection.query(memberSql, [projectId, owner_id, "manager"]);
 
     // 3. 활동 로그 기록
     await logActivity(created_by, projectId, null, "PROJECT_CREATED", {
@@ -262,7 +262,7 @@ app.put("/api/projects/:id", (req, res) => {
   }
 
   const sql = "UPDATE projects SET name = ?, content = ? WHERE id = ?";
-  db.query(sql, [name, description, id], (err, result) => {
+  db.query(sql, [name, content, id], (err, result) => {
     if (err) {
       console.error("Error updating project:", err);
       return res
@@ -493,7 +493,7 @@ app.get("/api/tasks/:taskId", async (req, res) => {
 app.put("/api/tasks/:id", (req, res) => {
   // TODO: 인증 로직 추가 (프로젝트 멤버만 수정 가능하도록)
   const { id } = req.params;
-  const { title, description, status, due_date, assigned_to_user_id } =
+  const { title, content, status, due_date, assigned_to_user_id } =
     req.body;
 
   // TODO: 변경된 필드만 감지하여 동적 쿼리 생성 및 활동 로그 상세 기록
