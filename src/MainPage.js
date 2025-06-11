@@ -9,7 +9,7 @@ import "./styles/MainContent.css";
 const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   const [projectName, setProjectName] = useState("");
   const [dDay, setDDay] = useState("");
-  const [content, setContent] = useState("");
+  const [description, setDescription] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -17,7 +17,7 @@ const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
       onSubmit({
         name: projectName,
         dDay: dDay,
-        content : content
+        content : description,
       });
       onClose();
     }
@@ -51,8 +51,8 @@ const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
           <div className="modal-input-group">
             <label>프로젝트 설명</label>
             <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               placeholder="프로젝트에 대한 설명을 입력하세요"
               rows="4"
             />
@@ -403,7 +403,7 @@ const MainPage = () => {
                     <h2>{selectedTab} 현황</h2>
                     <p>
                       프로젝트 설명:{" "}
-                      {selectedProject.content || "설명이 없습니다."}
+                      {selectedProject.description || "설명이 없습니다."}
                     </p>
                     <p>소유자: {selectedProject.owner_name}</p>
                     {/* 나머지 상세 정보도 selectedProject 객체의 속성을 이용하여 표시 */}
