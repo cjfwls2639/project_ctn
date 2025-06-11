@@ -1,4 +1,4 @@
-const express = require("express");
+onst express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const bcrypt = require("bcrypt");
@@ -351,20 +351,13 @@ app.get("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const sql = `
         SELECT t.*, GROUP_CONCAT(u.username SEPARATOR ', ') AS assignees
-<<<<<<< Updated upstream
         FROM tasks as t LEFT JOIN task_assignees as ta ON t.task_id = ta.task_id
         LEFT JOIN users as u ON ta.user_id = u.user_id
         WHERE t.project_id = ?
         GROUP BY t.task_id
         ORDER BY t.created_at DESC;
     `;
-=======
-        FROM tasks AS t LEFT JOIN task_assignees AS ta ON t.task_id = ta.task_id
-        LEFT JOIN users AS u ON ta.user_id = u.user_id
-        WHERE t.project_id = ?
-        GROUP BY t.task_id
-        ORDER BY t.created_at DESC;`;
->>>>>>> Stashed changes
+    
   db.query(sql, [projectId], (err, results) => {
     if (err) {
       console.error(`Error fetching tasks for project ${projectId}:`, err);
@@ -701,4 +694,3 @@ app.get("/api/tasks/due_date", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
