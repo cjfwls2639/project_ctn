@@ -42,8 +42,12 @@ CREATE TABLE tasks (
     content VARCHAR(100),
     due_date DATE,
     status ENUM('todo', 'doing', 'done') DEFAULT 'todo',
+    created_by_user_id INT NOT NULL,
+    assigned_to_user_id INT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(project_id)
+    FOREIGN KEY (project_id) REFERENCES projects(project_id).
+    FOREIGN KEY (created_by_user_id) REFERENCES users(user_id),
+    FOREIGN KEY (assigned_to_user_id) REFERENCES users(user_id)
 );
 
 CREATE TABLE task_assignees (
@@ -56,10 +60,7 @@ CREATE TABLE task_assignees (
 
 CREATE TABLE posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  
-  -- 이 게시물이 속한 업무의 ID (tasks 테이블과 연결)
   task_id INT NOT NULL,
-
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   author_id INT NOT NULL,
