@@ -197,7 +197,7 @@ app.get("/api/projects", (req, res) => {
         SELECT p.*, u.username as owner_name, pm.role_in_project
         FROM projects as p
         JOIN users as u ON p.created_by = u.user_id
-        JOIN project_members as pm ON p.id = pm.project_id
+        JOIN project_members as pm ON p.project_id = pm.project_id
         WHERE pm.user_id = ?
         ORDER BY p.created_at DESC
     `;
@@ -222,13 +222,13 @@ app.get("/api/projects/:id", async (req, res) => {
       db
         .promise()
         .query(
-          "SELECT p.*, u.username as owner_name FROM projects p JOIN users u ON p.owner_id = u.id WHERE p.id = ?",
+          "SELECT p.*, u.username as owner_name FROM projects as p JOIN users as u ON p.owner_id = u.user_id WHERE p.project_id = ?",
           [id]
         ),
       db
         .promise()
         .query(
-          "SELECT u.id, u.username, u.email, pm.role_in_project FROM project_members pm JOIN users u ON pm.user_id = u.id WHERE pm.project_id = ?",
+          "SELECT u.user_id, u.username, u.email, pm.role_in_project FROM project_members as pm JOIN users as u ON pm.user_id = u.user_id WHERE pm.project_id = ?",
           [id]
         ),
     ]);
@@ -279,22 +279,68 @@ app.put("/api/projects/:id", (req, res) => {
 });
 
 // 2.5. 프로젝트 삭제 (DELETE)
-app.delete("/api/projects/:id", (req, res) => {
-  // TODO: 인증 로직 추가 (프로젝트 owner만 삭제 가능하도록)
-  const { id } = req.params;
-  const sql = "DELETE FROM projects WHERE id = ?"; // ON DELETE CASCADE 덕분에 관련 멤버, 업무, 댓글 등도 모두 삭제됨
-  db.query(sql, [id], (err, result) => {
-    if (err) {
-      console.error("Error deleting project:", err);
-      return res
-        .status(500)
-        .json({ error: "프로젝트 삭제 중 오류가 발생했습니다." });
-    }
-    if (result.affectedRows === 0) {
+app.delete("/api/projects/:id", async (req, res) => { // async 키워드 추가
+  const { id } = req.params; // 삭제할 프로젝트 ID
+  // 요청 본문에서 userId를 가져옵니다. (프론트엔드에서 data: { userId: user.user_id } 로 보냈을 경우)
+  const { userId } = req.body;
+
+  // 1. 요청을 보낸 사용자 ID가 있는지 확인
+  if (!userId) {
+    return res.status(401).json({ error: "인증되지 않은 사용자입니다." });
+  }
+
+  const connection = await db.promise().getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // 2. 삭제하려는 프로젝트의 owner_id를 조회
+    const [projectRows] = await connection.query(
+      "SELECT created_by FROM projects WHERE project_id = ?", // project_id로 컬럼명 수정
+      [id]
+    );
+
+    if (projectRows.length === 0) {
+      await connection.rollback();
       return res.status(404).json({ message: "프로젝트를 찾을 수 없습니다." });
     }
+
+    const projectOwnerId = projectRows[0].owner_id;
+
+    // 3. 요청을 보낸 사용자가 프로젝트의 owner인지 확인
+    if (projectOwnerId !== parseInt(userId)) { // userId는 문자열일 수 있으므로 parseInt
+      await connection.rollback();
+      return res.status(403).json({ error: "프로젝트 소유자만 삭제할 수 있습니다." });
+    }
+
+    // 4. 소유자가 맞다면 프로젝트 삭제 진행
+    const [deleteResult] = await connection.query(
+      "DELETE FROM projects WHERE project_id = ?", // project_id로 컬럼명 수정
+      [id]
+    );
+
+    if (deleteResult.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "프로젝트를 찾을 수 없거나 이미 삭제되었습니다." });
+    }
+
+    // 5. 활동 로그 기록 (선택 사항: 삭제 시에도 로그 남기기)
+    // 프로젝트 이름 등을 알기 위해 다시 조회하는 로직을 추가하거나,
+    // projectRows[0]에서 project_name을 가져올 수 있다면 활용
+    await logActivity(userId, id, null, "PROJECT_DELETED", {
+      projectId: id,
+      // projectName: projectRows[0].project_name // 만약 위 쿼리에서 project_name도 가져왔다면
+    });
+
+    await connection.commit();
     res.json({ message: "프로젝트가 성공적으로 삭제되었습니다." });
-  });
+
+  } catch (err) {
+    await connection.rollback();
+    console.error("Error deleting project:", err);
+    res.status(500).json({ error: "프로젝트 삭제 중 오류가 발생했습니다." });
+  } finally {
+    connection.release();
+  }
 });
 
 
@@ -574,6 +620,7 @@ app.get("/api/tasks/due_date", (req, res) => {
     res.json(results);
   });
 });
+
 
 // 서버 시작
 app.listen(PORT, () => {
