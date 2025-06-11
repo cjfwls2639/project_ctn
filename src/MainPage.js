@@ -93,24 +93,24 @@ const calculateDday = (dateString) => {
 
 const MainPage = () => {
   const navigate = useNavigate();
-
-  // NEW: 로딩 상태 추가
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // ... 기타 상태값들은 기존과 동일
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isAlarmMenuOpen, setIsAlarmMenuOpen] = useState(false);
   const [alarms, setAlarms] = useState([]);
   const [alarmCount, setAlarmCount] = useState(0);
   const [selectedTab, setSelectedTab] = useState("메인");
+  const [error, setError] = useState(null);
 
-  // NEW: localStorage에서 사용자 정보 가져오기
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // NEW: 프로젝트 목록을 불러오는 함수
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR');
+  };
+
   const fetchProjects = useCallback(async () => {
     if (!user || !user.user_id) {
       alert("로그인이 필요합니다.");
@@ -141,7 +141,7 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [user_id, navigate, selectedProjectId]);
+  }, [user, navigate, selectedProjectId]);
 
   const fetchAlarms = async () => {
     try {
@@ -170,7 +170,7 @@ const MainPage = () => {
     }else{
       navigate("/login");
     }
-  }, [user_id]);
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("user"); // 로그아웃 시 사용자 정보 제거
@@ -252,7 +252,7 @@ const MainPage = () => {
                 )}
               </button>
               <div className="alarm-menu" style={{ display: isAlarmMenuOpen ? 'block' : 'none' }}>
-                      {isLoading ? (
+                      {loading ? (
                   <div className="alarm-item">로딩 중...</div>
                 ) : error ? (
                   <div className="alarm-item error">{error}</div>
