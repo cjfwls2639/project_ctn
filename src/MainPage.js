@@ -167,7 +167,6 @@ const MainPage = () => {
     if(user){
       const user_id = user.user_id;
       if (user_id) {
-        fetchProjects();
         fetchAlarms();
       }else{
         navigate("/login");
@@ -175,7 +174,11 @@ const MainPage = () => {
     }else{
       navigate("/login");
     }
-  }, [user, fetchAlarms, fetchProjects, navigate]);
+  }, [user, fetchAlarms, navigate]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user"); // 로그아웃 시 사용자 정보 제거

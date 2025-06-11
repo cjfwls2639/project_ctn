@@ -1,5 +1,3 @@
-// src/Login.js
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "./api/axios"; // 우리가 만든 axios 인스턴스 import

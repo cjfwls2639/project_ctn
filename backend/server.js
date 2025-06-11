@@ -656,7 +656,6 @@ app.get("/api/profile", (req, res) => {
 //6. 알람 불러오기
 app.get("/api/tasks/due_date", (req, res) => {
   const { userId } = req.query;
-
   if (!userId) {
     return res
       .status(400)
@@ -669,7 +668,7 @@ app.get("/api/tasks/due_date", (req, res) => {
   // BETWEEN A AND B: A와 B 사이에 있는 값 (A와 B 포함)
   const sql = `
     SELECT t.*
-    FROM task t
+    FROM tasks t
     JOIN task_assignees ta ON t.task_id = ta.task_id
     WHERE ta.user_id = ?
       AND t.due_date IS NOT NULL
@@ -678,11 +677,12 @@ app.get("/api/tasks/due_date", (req, res) => {
   `;
 
   db.query(sql, [userId], (err, results) => {
+    console.log(sql, userId, results);
     if (err) {
       console.error("Error fetching tasks due soon:", err);
       return res
         .status(500)
-        .json({ error: "마감 임박 태스크 목록을 불러오는 중 오류가 발생했습니다." });
+        .json({ error: "알림 목록을 불러오는 중 오류가 발생했습니다." });
     }
     res.json(results);
   });
