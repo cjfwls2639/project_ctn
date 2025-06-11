@@ -191,11 +191,13 @@ app.get("/api/projects", (req, res) => {
       .json({ error: "사용자 ID(userId) 쿼리 파라미터가 필요합니다." });
   }
   // project_members 테이블과 JOIN하여 해당 사용자가 속한 프로젝트만 조회
+  // p = projects 테이블, u = users 테이블, pm= project_members 테이블
+  // owner_name = u.username
   const sql = `
         SELECT p.*, u.username as owner_name, pm.role_in_project
-        FROM projects p
-        JOIN users u ON p.owner_id = u.id
-        JOIN project_members pm ON p.id = pm.project_id
+        FROM projects as p
+        JOIN users as u ON p.created_by = u.user_id
+        JOIN project_members as pm ON p.id = pm.project_id
         WHERE pm.user_id = ?
         ORDER BY p.created_at DESC
     `;
