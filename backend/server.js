@@ -105,6 +105,28 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+// 특정 사용자 정보 조회 (READ)
+app.get("/api/users/:id", (req, res) => {
+  const userId = req.params.id;
+
+  const sql =
+    "SELECT user_id, username, email, created_at FROM users WHERE user_id = ?";
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error fetching user:", err);
+      return res
+        .status(500)
+        .json({ error: "사용자 정보 조회 중 오류가 발생했습니다." });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "사용자를 찾을 수 없습니다." });
+    }
+
+    res.json(results[0]);
+  });
+});
 
 // --- 2. 프로젝트 API (Projects) ---
 

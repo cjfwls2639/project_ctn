@@ -1,28 +1,52 @@
 import React, { useState, useEffect } from "react";
 import "./styles/profile.css";
+import axios from "./api/axios";
 
 const Profile = () => {
-  const [userData, setUserData] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-  const userId = localStorage.getItem("user_id"); // 로그인 시 저장했다고 가정
+    // 컴포넌트가 렌더링될 때 사용자 정보를 불러오는 함수
+    const fetchUserProfile = async () => {
+      try {
+        // --- 여기가 핵심! ---
+        // 1. localStorage에서 'user'라는 키로 저장된 데이터를 가져옵니다.
+        const storedUserJSON = localStorage.getItem("user");
 
-  fetch(`http://localhost:5000/api/profile?user_id=${userId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
+        if (!storedUserJSON) {
+          console.error("로그인 정보가 없습니다.");
+          // 실제 애플리케이션에서는 로그인 페이지로 리디렉션
+          return;
+        }
+
+        // 2. 가져온 데이터는 JSON 문자열이므로, Javascript 객체로 변환(parse)합니다.
+        const storedUser = JSON.parse(storedUserJSON);
+
+        // 3. 변환된 객체에서 user_id 값을 추출합니다.
+        const userId = storedUser.user_id;
+
+        if (!userId) {
+          console.error("사용자 ID를 찾을 수 없습니다.");
+          return;
+        }
+
+        // 4. 추출한 userId를 URL에 포함시켜 API를 호출합니다.
+        //    템플릿 리터럴(백틱 ``)을 사용하면 변수를 문자열에 쉽게 넣을 수 있습니다.
+        const response = await axios.get(`/api/users/${userId}`);
+
+        // 5. 서버로부터 받은 사용자 프로필 정보를 state에 저장합니다.
+        setUserProfile(response.data);
+      } catch (err) {
+        console.error("프로필 정보를 불러오는 데 실패했습니다:", err);
+      } finally {
+        setLoading(false); // 로딩 상태 종료
       }
-      return response.json();
-    })
-    .then(data => {
-      setUserData(data);
-    })
-    .catch(error => {
-      setError("프로필 정보를 불러오는 데 실패했습니다.");
-      console.error("Error fetching profile data:", error);
-    });
-}, []);
+    };
+
+    fetchUserProfile();
+  }, []);
 
   return (
     <div className="profile-container">
@@ -31,26 +55,28 @@ const Profile = () => {
 
         {error && <div className="profile-error-message">{error}</div>}
 
-        {userData ? (
+        {userProfile ? (
           <>
             <div className="profile-info">
               <label>이름:</label>
-              <span>{userData.name}</span>
+              <span>{userProfile.username}</span>
             </div>
             <div className="profile-info">
               <label>이메일:</label>
-              <span>{userData.email}</span>
+              <span>{userProfile.email}</span>
             </div>
             <div className="profile-info">
               <label>가입 날짜:</label>
-              <span>{new Date(userData.createdAt).toLocaleDateString()}</span>
+              <span>
+                {new Date(userProfile.created_at).toLocaleDateString()}
+              </span>
             </div>
           </>
         ) : (
           !error && <p>로딩 중...</p>
         )}
 
-        <button className="profile-button">프로필 수정</button>
+        <button className="profile-button">비밀번호 변경</button>
       </div>
     </div>
   );
