@@ -93,24 +93,24 @@ const calculateDday = (dateString) => {
 
 const MainPage = () => {
   const navigate = useNavigate();
-
-  // NEW: 로딩 상태 추가
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState([]);
-  // CHANGED: selectedProject는 이제 index가 아닌 project의 'id'를 저장합니다.
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // ... 기타 상태값들은 기존과 동일
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isAlarmMenuOpen, setIsAlarmMenuOpen] = useState(false);
+  const [alarms, setAlarms] = useState([]);
   const [alarmCount, setAlarmCount] = useState(0);
   const [selectedTab, setSelectedTab] = useState("메인");
+  const [error, setError] = useState(null);
 
-  // NEW: localStorage에서 사용자 정보 가져오기
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // NEW: 프로젝트 목록을 불러오는 함수
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ko-KR');
+  };
+
   const fetchProjects = useCallback(async () => {
     if (!user || !user.user_id) {
       alert("로그인이 필요합니다.");
@@ -143,11 +143,34 @@ const MainPage = () => {
     }
   }, [user, navigate, selectedProjectId]);
 
-  useEffect(() => {
-    if (user) {
-      fetchProjects();
+  const fetchAlarms = async () => {
+    try {
+      setLoading(true); // 요청 시작 시 로딩 상태로 설정
+      setError(null);     // 이전 에러 상태 초기화
+
+      // API GET 요청 (백엔드 서버 주소는 실제 환경에 맞게 수정하세요)
+      const response = await axios.get(`/api/tasks/due_date?userId=${user.user_id}`);
+      
+      setAlarms(response.data); // 성공 시 상태에 데이터 저장
+      setAlarmCount(response.data.length); // 알림 개수 설정
+    } catch (err) {
+      console.error("마감 임박 태스크를 불러오는 중 오류 발생:", err);
+      setError("알림을 불러오는 데 실패했습니다."); // 에러 발생 시 에러 상태 설정
+    } finally {
+      setLoading(false); // 요청 완료 시 로딩 상태 해제
     }
-  }, [user, fetchProjects]);
+  };
+
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    const user_id = user.user_id;
+    if (user_id) {
+      fetchProjects();
+      fetchAlarms();
+    }else{
+      navigate("/login");
+    }
+  }, [user]);
 
   const handleLogout = () => {
     localStorage.removeItem("user"); // 로그아웃 시 사용자 정보 제거
@@ -229,10 +252,28 @@ const MainPage = () => {
                 )}
               </button>
               <div className="alarm-menu" style={{ display: isAlarmMenuOpen ? 'block' : 'none' }}>
-                {alarmCount > 0 ? (
-                  <div className="alarm-item">새로운 알림이 {alarmCount}개 있습니다</div>
+                      {loading ? (
+                  <div className="alarm-item">로딩 중...</div>
+                ) : error ? (
+                  <div className="alarm-item error">{error}</div>
+                ) : alarmCount > 0 ? (
+                  // 데이터가 있을 경우, ul과 li로 목록 렌더링
+                  <ul className="alarm-list">
+                    <li className="alarm-header">
+                      마감 임박 태스크 ({alarmCount}개)
+                    </li>
+                    {alarms.map(task => (
+                      // map 사용 시 각 항목은 고유한 'key' prop을 가져야 합니다.
+                      <li key={task.task_id} className="alarm-item">
+                        <div className="task-title">{task.title}</div>
+                        <div className="task-due-date">
+                          마감일: {formatDate(task.due_date)}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
                 ) : (
-                  <div className="alarm-item">새로운 알림이 없습니다</div>
+                  <div className="alarm-item">알림이 없습니다.</div>
                 )}
               </div>
             </div>

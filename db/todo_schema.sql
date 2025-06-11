@@ -56,11 +56,18 @@ CREATE TABLE task_assignees (
 
 CREATE TABLE posts (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  
+  -- 이 게시물이 속한 업무의 ID (tasks 테이블과 연결)
+  task_id INT NOT NULL,
+
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   author_id INT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE
+  
+  -- 외래 키 제약 조건 설정
+  FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
+  FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
 );
 
 CREATE TABLE comments (
