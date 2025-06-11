@@ -58,19 +58,6 @@ CREATE TABLE task_assignees (
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-CREATE TABLE posts (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  task_id INT NOT NULL,
-  title VARCHAR(255) NOT NULL,
-  content TEXT NOT NULL,
-  author_id INT NOT NULL,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  
-  -- 외래 키 제약 조건 설정
-  FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE,
-  FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
-);
-
 CREATE TABLE comments (
     comment_id INT AUTO_INCREMENT PRIMARY KEY,
     task_id INT NOT NULL,
