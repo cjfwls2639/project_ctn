@@ -204,30 +204,6 @@ async function createTables() {
   }
 }
 
-// --- Helper Functions ---
-// 활동 로그 기록 함수 (스키마 반영)
-const logActivity = async (userId, projectId, taskId, behavior, details) => {
-  const sql =
-    "INSERT INTO activity_logs (user_id, project_id, task_id, behavior, details) VALUES (?, ?, ?, ?, ?)";
-  try {
-    const connection = await pool.getConnection();
-    await connection
-      .execute(sql, [
-        userId,
-        projectId,
-        taskId,
-        behavior, // action_type -> behavior
-        JSON.stringify(details),
-      ]);
-    const log_id = result.insertId;
-    console.log(`Activity logged: ${actionType} (log_id: ${log_id})`);
-
-  } catch (err) {
-    console.error("Error logging activity:", err);
-  }
-};
-
-
 // --- JWT 토큰 검증 미들웨어 ---
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
