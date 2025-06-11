@@ -150,12 +150,14 @@ const MainPage = () => {
       setLoading(true); 
       setError(null);    
 
-      const response = await axios.get(`/api/tasks/due_date?userId=${user.user_id}`);
+      const response = await axios.get(`/api/tasks/due_date?userId`, {
+        params: { userId: user.user_id }, 
+      });
       
       setAlarms(response.data); 
       setAlarmCount(response.data.length); 
     } catch (err) {
-      console.error("마감 임박 태스크를 불러오는 중 오류 발생:", err);
+      console.error("알림을 불러오는 중 오류 발생:", err);
       setError("알림을 불러오는 데 실패했습니다."); 
     } finally {
       setLoading(false); 
