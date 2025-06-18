@@ -132,13 +132,8 @@ app.get("/api/users/:id", (req, res) => {
 
 // 2.1. 새로운 프로젝트 생성 (CREATE)
 app.post("/api/projects", async (req, res) => {
-<<<<<<< HEAD
   const { name, content, created_by } = req.body;
   if (!name || !created_by) {
-=======
-  const { name, content, owner_id } = req.body;
-  if (!name || !owner_id) {
->>>>>>> 454ce2c (Update server.js)
     return res
       .status(400)
       .json({ error: "프로젝트 이름을 입력 해주세요." });
@@ -150,11 +145,7 @@ app.post("/api/projects", async (req, res) => {
 
     // 1. projects 테이블에 프로젝트 생성
     const projectSql =
-<<<<<<< HEAD
       "INSERT INTO projects (name, content, created_by) VALUES (?, ?, ?)";
-=======
-      "INSERT INTO projects (project_name, content, created_by) VALUES (?, ?, ?)";
->>>>>>> 454ce2c (Update server.js)
     const [projectResult] = await connection.query(projectSql, [
       name,
       content,
@@ -165,11 +156,7 @@ app.post("/api/projects", async (req, res) => {
     // 2. project_members 테이블에 소유자를 'manager'로 추가
     const memberSql =
       "INSERT INTO project_members (project_id, user_id, role_in_project) VALUES (?, ?, ?)";
-<<<<<<< HEAD
     await connection.query(memberSql, [projectId, created_by, "manager"]);
-=======
-      await connection.query(memberSql, [projectId, owner_id, "manager"]);
->>>>>>> 454ce2c (Update server.js)
 
     // 3. 활동 로그 기록
     await logActivity(created_by, projectId, null, "PROJECT_CREATED", {
@@ -275,11 +262,7 @@ app.put("/api/projects/:id", (req, res) => {
   }
 
   const sql = "UPDATE projects SET name = ?, content = ? WHERE id = ?";
-<<<<<<< HEAD
   db.query(sql, [name, description, id], (err, result) => {
-=======
-  db.query(sql, [name, content, id], (err, result) => {
->>>>>>> 454ce2c (Update server.js)
     if (err) {
       console.error("Error updating project:", err);
       return res
@@ -360,10 +343,49 @@ app.delete("/api/projects/:id", async (req, res) => { // async 키워드 추가
   }
 });
 
+// --- 3. 알람 API (Tasks) ---
 
-// --- 3. 업무 API (Tasks) ---
+// 3. 알람 불러오기
+app.get("/api/tasks/due_date", (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res
+      .status(400)
+      .json({ error: "사용자 ID(userId) 쿼리 파라미터가 필요합니다." });
+  }
 
-// 3.1. 특정 프로젝트의 모든 업무 가져오기 (READ ALL FROM PROJECT)
+  // due_date가 오늘부터 7일 이내이면서 해당 userId에게 할당된 태스크를 조회합니다.
+  // CURDATE(): 현재 날짜를 반환하는 SQL 함수 (MySQL 기준)
+  // INTERVAL 7 DAY: 현재 날짜에 7일을 더하는 연산
+  // BETWEEN A AND B: A와 B 사이에 있는 값 (A와 B 포함)
+  const sql = `
+    SELECT t.*
+    FROM tasks t
+    JOIN task_assignees ta ON t.task_id = ta.task_id
+    WHERE ta.user_id = ?
+      AND t.due_date IS NOT NULL
+      AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+    ORDER BY t.due_date ASC;
+  `;
+      
+  console.log(sql, userId, res);
+    
+  db.query(sql, [userId], (err, results) => {
+    console.log(sql, userId, results);
+    if (err) {
+      console.error("Error fetching tasks due soon:", err);
+      return res
+        .status(500)
+        .json({ error: "알림 목록을 불러오는 중 오류가 발생했습니다." });
+    }
+    res.json(results);
+  });
+});
+
+
+// --- 4. 업무 API (Tasks) ---
+
+// 4.1. 특정 프로젝트의 모든 업무 가져오기 (READ ALL FROM PROJECT)
 app.get("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const sql = `
@@ -374,10 +396,7 @@ app.get("/api/projects/:projectId/tasks", (req, res) => {
         GROUP BY t.task_id
         ORDER BY t.created_at DESC;
     `;
-<<<<<<< HEAD
     
-=======
->>>>>>> 454ce2c (Update server.js)
   db.query(sql, [projectId], (err, results) => {
     if (err) {
       console.error(`Error fetching tasks for project ${projectId}:`, err);
@@ -389,7 +408,7 @@ app.get("/api/projects/:projectId/tasks", (req, res) => {
   });
 });
 
-// 3.2. 새로운 업무 생성 (CREATE)
+// 4.2. 새로운 업무 생성 (CREATE)
 app.post("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const {
@@ -510,15 +529,11 @@ app.get("/api/tasks/:taskId", async (req, res) => {
   }
 });
 
-// 3.4. 업무 정보 수정 (UPDATE)
+// 4.4. 업무 정보 수정 (UPDATE)
 app.put("/api/tasks/:id", (req, res) => {
   // TODO: 인증 로직 추가 (프로젝트 멤버만 수정 가능하도록)
   const { id } = req.params;
-<<<<<<< HEAD
   const { title, description, status, due_date, assigned_to_user_id } =
-=======
-  const { title, content, status, due_date, assigned_to_user_id } =
->>>>>>> 454ce2c (Update server.js)
     req.body;
 
   // TODO: 변경된 필드만 감지하여 동적 쿼리 생성 및 활동 로그 상세 기록
@@ -549,7 +564,7 @@ app.put("/api/tasks/:id", (req, res) => {
   );
 });
 /**
- * 3.5. 업무 삭제 (DELETE) - 관리자 권한 확인 로직 추가
+ * 4.5. 업무 삭제 (DELETE) - 관리자 권한 확인 로직 추가
  */
 app.delete("/api/tasks/:id", (req, res) => {
   // TODO: 실제 프로젝트에서는 JWT 인증 미들웨어를 통해 사용자 ID를 가져와야 합니다.
@@ -596,9 +611,9 @@ app.delete("/api/tasks/:id", (req, res) => {
   });
 });
 
-// --- 4. 댓글 API (Comments on Tasks) ---
+// --- 5. 댓글 API (Comments on Tasks) ---
 
-// 4.1. 특정 업무의 모든 댓글 가져오기
+// 5.1. 특정 업무의 모든 댓글 가져오기
 app.get("/api/tasks/:taskId/comments", (req, res) => {
   const { taskId } = req.params;
   const sql = `
@@ -619,7 +634,7 @@ app.get("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
-// 4.2. 새로운 댓글 작성
+// 5.2. 새로운 댓글 작성
 app.post("/api/tasks/:taskId/comments", (req, res) => {
   const { taskId } = req.params;
   const { user_id, content } = req.body;
@@ -647,7 +662,7 @@ app.post("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
-// --- 5. 프로필 API ---
+// --- 6. 프로필 API ---
 app.get("/api/profile", (req, res) => {
   // 프론트에서 user_id 를 쿼리 파라미터 또는 헤더로 전달한다고 가정
   const userId = req.query.user_id; // 또는 req.headers['user-id']
@@ -678,48 +693,8 @@ app.get("/api/profile", (req, res) => {
   });
 });
 
-//6. 알람 불러오기
-app.get("/api/tasks/due_date", (req, res) => {
-  const { userId } = req.query;
-  if (!userId) {
-    return res
-      .status(400)
-      .json({ error: "사용자 ID(userId) 쿼리 파라미터가 필요합니다." });
-  }
-
-  // due_date가 오늘부터 7일 이내이면서 해당 userId에게 할당된 태스크를 조회합니다.
-  // CURDATE(): 현재 날짜를 반환하는 SQL 함수 (MySQL 기준)
-  // INTERVAL 7 DAY: 현재 날짜에 7일을 더하는 연산
-  // BETWEEN A AND B: A와 B 사이에 있는 값 (A와 B 포함)
-  const sql = `
-    SELECT t.*
-    FROM tasks t
-    JOIN task_assignees ta ON t.task_id = ta.task_id
-    WHERE ta.user_id = ?
-      AND t.due_date IS NOT NULL
-      AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-    ORDER BY t.due_date ASC;
-  `;
-
-  db.query(sql, [userId], (err, results) => {
-    console.log(sql, userId, results);
-    if (err) {
-      console.error("Error fetching tasks due soon:", err);
-      return res
-        .status(500)
-        .json({ error: "알림 목록을 불러오는 중 오류가 발생했습니다." });
-    }
-    res.json(results);
-  });
-});
-
-
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
-<<<<<<< HEAD
 });
 
-=======
-});
->>>>>>> 454ce2c (Update server.js)

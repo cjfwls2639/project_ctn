@@ -104,8 +104,8 @@ const MainPage = () => {
   const [alarmCount, setAlarmCount] = useState(0);
   const [selectedTab, setSelectedTab] = useState("메인");
   const [error, setError] = useState(null);
-
-  const user = JSON.parse(localStorage.getItem("user"));
+  // eslint-disable-next-line no-unused-vars
+  const [user, _setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -142,18 +142,16 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, navigate, selectedProjectId]);
+  }, [user, selectedProjectId, navigate]);
 
   //알람 불러오기
-  const fetchAlarms = async () => {
+  const fetchAlarms = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await axios.get(`/api/tasks/due_date?userId`, {
+      const response = await axios.get("/api/tasks/due_date", {
         params: { userId: user.user_id },
       });
-
       setAlarms(response.data);
       setAlarmCount(response.data.length);
     } catch (err) {
@@ -162,28 +160,21 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-      const user_id = user.user_id;
-      if (user_id) {
-        fetchAlarms();
-      } else {
-        navigate("/login");
-      }
+    const loggedInUser = JSON.parse(localStorage.getItem("user"));
+
+    if (loggedInUser && loggedInUser.user_id) {
+      fetchAlarms();
+      fetchProjects();
     } else {
       navigate("/login");
     }
-  }, [user, fetchAlarms, navigate]);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  }, [navigate, fetchAlarms, fetchProjects]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // 로그아웃 시 사용자 정보 제거
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
@@ -342,13 +333,12 @@ const MainPage = () => {
                     key={project.id}
                     className={project.id === selectedProjectId ? "active" : ""}
                   >
-                    <a
+                    <button
                       className="sidebar-link"
-                      style={{ cursor: "pointer" }}
                       onClick={() => setSelectedProjectId(project.id)}
                     >
                       {project.name}
-                    </a>
+                    </button>
                   </li>
                 ))}
               </ul>
