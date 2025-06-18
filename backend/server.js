@@ -13,23 +13,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // --- Helper Functions (나중에 별도 모듈로 분리 가능) ---
 // 활동 로그 기록 함수 (예시)
-const logActivity = async (userId, projectId, taskId, actionType, details) => {
+const logActivity = async (connection, userId, projectId, taskId, actionType, details) => {
   const sql =
     "INSERT INTO activity_logs (user_id, project_id, task_id, action_type, details) VALUES (?, ?, ?, ?, ?)";
   try {
-    await db
-      .promise()
-      .query(sql, [
-        userId,
-        projectId,
-        taskId,
-        actionType,
-        JSON.stringify(details),
-      ]);
+    await connection.query(sql, [
+      userId,
+      projectId,
+      taskId,
+      actionType,
+      JSON.stringify(details),
+    ]);
     console.log(`Activity logged: ${actionType}`);
   } catch (err) {
-    console.error("Error logging activity:", err);
-    // 로깅 실패가 주 로직에 영향을 주지 않도록 에러를 던지지 않음
+    console.error("Error logging activity in transaction:", err);
+    throw err;
   }
 };
 
@@ -145,7 +143,7 @@ app.post("/api/projects", async (req, res) => {
 
     // 1. projects 테이블에 프로젝트 생성
     const projectSql =
-      "INSERT INTO projects (name, content, created_by) VALUES (?, ?, ?)";
+      "INSERT INTO projects (project_name, content, created_by) VALUES (?, ?, ?)";
     const [projectResult] = await connection.query(projectSql, [
       name,
       content,
@@ -159,9 +157,10 @@ app.post("/api/projects", async (req, res) => {
     await connection.query(memberSql, [projectId, created_by, "manager"]);
 
     // 3. 활동 로그 기록
-    await logActivity(created_by, projectId, null, "PROJECT_CREATED", {
+    await logActivity(connection, created_by, projectId, null, "PROJECT_CREATED", {
       projectName: name,
     });
+
 
     await connection.commit();
     res

@@ -189,7 +189,7 @@ const MainPage = () => {
       const response = await axios.post("/api/projects", {
         name: projectData.name,
         content: projectData.content,
-        owner_id: user.user_id, // 로그인한 사용자 ID를 owner_id로 전달
+        created_by: user.user_id, 
       });
       alert(response.data.message);
       await fetchProjects(); // 프로젝트 생성 후 목록을 다시 불러옵니다.
@@ -337,7 +337,7 @@ const MainPage = () => {
                       className="sidebar-link"
                       onClick={() => setSelectedProjectId(project.id)}
                     >
-                      {project.name}
+                      {project.project_name}
                     </button>
                   </li>
                 ))}
@@ -362,7 +362,7 @@ const MainPage = () => {
             {loading ? (
               <p>프로젝트를 불러오는 중...</p>
             ) : projects.length > 0 && selectedProject ? (
-              <>
+              <div>
                 <h1 className="project-title">{selectedProject.name}</h1>
                 <div className="content-container">
                   <div className="project-info">
@@ -409,11 +409,11 @@ const MainPage = () => {
                       프로젝트 설명:{" "}
                       {selectedProject.content || "설명이 없습니다."}
                     </p>
-                    <p>소유자: {selectedProject.owner_name}</p>
+                    <p>소유자: {selectedProject.created_by}</p>
                     {/* 나머지 상세 정보도 selectedProject 객체의 속성을 이용하여 표시 */}
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="no-projects">
                 <h2>프로젝트가 없습니다</h2>
