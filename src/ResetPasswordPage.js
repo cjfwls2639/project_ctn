@@ -18,37 +18,23 @@ const ResetPasswordPage = () => {
     setMessageType('');
     setMessage('');
 
-    // 1. 비밀번호 일치 여부 확인 (가장 먼저)
     if (password !== confirmPassword) {
       setMessageType('error');
       setMessage('비밀번호가 일치하지 않습니다.');
       return;
     }
-
-    // 2. 회원가입 페이지의 유효성 검사 로직 적용
-    if (!password.trim()) {
+    if (password.length < 6) {
       setMessageType('error');
-      setMessage('비밀번호는 필수입니다.');
-      return;
-    } 
-    
-    // 정규식: 특수문자를 하나 이상 포함하는지 확인
-    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
-    if (password.length < 8 || !specialCharRegex.test(password)) {
-      setMessageType('error');
-      setMessage('비밀번호는 8자 이상, 특수문자를 포함해야 합니다.');
+      setMessage('비밀번호는 6자 이상이어야 합니다.');
       return;
     }
 
-    // 3. 모든 검사를 통과하면 API 요청 시작
-    setIsLoading(true);
+    setIsLoading(true); // 로딩 시작
 
     try {
       const response = await axios.post(`/api/reset-password/${token}`, { password });
       setMessageType('success');
       setMessage(response.data.message + ' 3초 후 로그인 페이지로 이동합니다.');
-      // 성공 시에는 입력 필드를 비활성화하거나 숨길 수 있습니다. (선택사항)
-      // setPassword(''); setConfirmPassword('');
       setTimeout(() => {
         navigate('/login');
       }, 3000);
@@ -56,7 +42,7 @@ const ResetPasswordPage = () => {
       setMessageType('error');
       setMessage(error.response?.data?.error || '오류가 발생했습니다.');
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // 로딩 종료
     }
   };
 
@@ -72,7 +58,7 @@ const ResetPasswordPage = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호는 8자 이상, 특수문자를 포함해야 합니다"
+              placeholder="6자 이상 입력"
               required
             />
           </div>

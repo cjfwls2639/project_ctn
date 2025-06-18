@@ -80,7 +80,7 @@ app.post("/api/login", (req, res) => {
   
 // 테이블명 'users', 컬럼명 'user_id', 'password' 사용
   const sql =
-    "SELECT user_id, username, password FROM users WHERE username = ?";
+    "SELECT user_id, username, password, email FROM users WHERE username = ?";
   db.query(sql, [username], async (err, results) => {
     if (err) {
       console.error("Error finding user:", err);
@@ -98,9 +98,9 @@ app.post("/api/login", (req, res) => {
     }
 
     res.json({
-      message: "로그인 성공!",
       user_id: user.user_id,
       username: user.username,
+      email: user.email,
     });
   });
 });
@@ -149,7 +149,7 @@ app.post("/api/projects", async (req, res) => {
     const [projectResult] = await connection.query(projectSql, [
       name,
       content,
-      owner_id,
+      created_by,
     ]);
     const projectId = projectResult.insertId;
 
@@ -367,11 +367,8 @@ app.get("/api/tasks/due_date", (req, res) => {
       AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
     ORDER BY t.due_date ASC;
   `;
-      
-  console.log(sql, userId, res);
-    
+  
   db.query(sql, [userId], (err, results) => {
-    console.log(sql, userId, results);
     if (err) {
       console.error("Error fetching tasks due soon:", err);
       return res
@@ -383,9 +380,107 @@ app.get("/api/tasks/due_date", (req, res) => {
 });
 
 
-// --- 4. 업무 API (Tasks) ---
+const nodemailer = require('nodemailer');
+const crypto = require('crypto'); // Node.js 내장 모듈
 
-// 4.1. 특정 프로젝트의 모든 업무 가져오기 (READ ALL FROM PROJECT)
+
+// --- 4. 비밀번호 재설정 API ---
+
+// --- 4.1. 비밀번호 재설정 요청 처리 API ---
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // 1. 이메일로 사용자 찾기
+    const [users] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
+    
+    if (users.length === 0) {
+      // 보안을 위해, 이메일이 존재하지 않아도 성공한 것처럼 응답합니다.
+      // (악의적인 사용자가 어떤 이메일이 가입되어 있는지 추측하는 것을 막기 위함)
+      return res.json({ message: '비밀번호 재설정 이메일을 보냈습니다. 받은 편지함을 확인해주세요.' });
+    }
+    const user = users[0];
+
+    // 2. 보안 토큰 생성
+    const token = crypto.randomBytes(20).toString('hex');
+
+    // 3. 토큰 만료 시간 설정 (예: 1시간 후)
+    const expires = new Date(Date.now() + 3600000); // 1시간 = 3600 * 1000 ms
+
+    // 4. DB에 토큰과 만료 시간 저장
+    await db.promise().query(
+      'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE user_id = ?',
+      [token, expires, user.user_id]
+    );
+
+    // 5. 이메일 발송 설정 (Nodemailer)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail', // 예: Gmail. 실제 서비스에서는 SendGrid, Mailgun 등 추천
+      auth: {
+        user: process.env.GMAIL_ADDRESS, // 실제 이메일 주소
+        pass: process.env.GMAIL_PASSWORD      // Gmail 앱 비밀번호 (보안 설정 필요)
+      }
+    });
+
+    const resetURL = `http://localhost:3000/reset-password/${token}`; // 프론트엔드 주소
+
+    const mailOptions = {
+      to: user.email,
+      from: process.env.GMAIL_ADDRESS,
+      subject: '비밀번호 재설정 요청',
+      text: `비밀번호를 재설정하려면 다음 링크를 클릭하세요:\n\n${resetURL}\n\n이 링크는 1시간 동안 유효합니다.`
+    };
+
+    // 6. 이메일 발송
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: '비밀번호 재설정 이메일을 보냈습니다. 받은 편지함을 확인해주세요.' });
+
+  } catch (err) {
+    console.error('비밀번호 재설정 요청 처리 중 오류:', err);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+
+// --- 4.2. 새 비밀번호로 업데이트하는 API ---
+app.post('/api/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    // 1. 토큰으로 사용자 찾기 (만료 시간도 확인)
+    const [users] = await db.promise().query(
+      'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
+      [token]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({ error: '비밀번호 재설정 토큰이 유효하지 않거나 만료되었습니다.' });
+    }
+    const user = users[0];
+
+    // 2. 새 비밀번호 암호화
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. DB 업데이트 (비밀번호 변경 및 토큰 정보 삭제)
+    await db.promise().query(
+      'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE user_id = ?',
+      [hashedPassword, user.user_id]
+    );
+
+    res.json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+
+  } catch (err) {
+    console.error('비밀번호 변경 중 오류:', err);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+
+// --- 5. 업무 API (Tasks) ---
+
+// 5.1. 특정 프로젝트의 모든 업무 가져오기 (READ ALL FROM PROJECT)
 app.get("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const sql = `
@@ -408,7 +503,7 @@ app.get("/api/projects/:projectId/tasks", (req, res) => {
   });
 });
 
-// 4.2. 새로운 업무 생성 (CREATE)
+// 5.2. 새로운 업무 생성 (CREATE)
 app.post("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const {
@@ -529,7 +624,7 @@ app.get("/api/tasks/:taskId", async (req, res) => {
   }
 });
 
-// 4.4. 업무 정보 수정 (UPDATE)
+// 5.4. 업무 정보 수정 (UPDATE)
 app.put("/api/tasks/:id", (req, res) => {
   // TODO: 인증 로직 추가 (프로젝트 멤버만 수정 가능하도록)
   const { id } = req.params;
@@ -563,9 +658,8 @@ app.put("/api/tasks/:id", (req, res) => {
     }
   );
 });
-/**
- * 4.5. 업무 삭제 (DELETE) - 관리자 권한 확인 로직 추가
- */
+
+// 5.5. 업무 삭제 (DELETE) - 관리자 권한 확인 로직 추가
 app.delete("/api/tasks/:id", (req, res) => {
   // TODO: 실제 프로젝트에서는 JWT 인증 미들웨어를 통해 사용자 ID를 가져와야 합니다.
   const { userId } = req.body; // 테스트를 위해 요청 body에서 사용자 ID를 받는다고 가정
@@ -611,9 +705,9 @@ app.delete("/api/tasks/:id", (req, res) => {
   });
 });
 
-// --- 5. 댓글 API (Comments on Tasks) ---
+// --- 6. 댓글 API (Comments on Tasks) ---
 
-// 5.1. 특정 업무의 모든 댓글 가져오기
+// 6.1. 특정 업무의 모든 댓글 가져오기
 app.get("/api/tasks/:taskId/comments", (req, res) => {
   const { taskId } = req.params;
   const sql = `
@@ -634,7 +728,7 @@ app.get("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
-// 5.2. 새로운 댓글 작성
+// 6.2. 새로운 댓글 작성
 app.post("/api/tasks/:taskId/comments", (req, res) => {
   const { taskId } = req.params;
   const { user_id, content } = req.body;
@@ -662,7 +756,7 @@ app.post("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
-// --- 6. 프로필 API ---
+// --- 7. 프로필 API ---
 app.get("/api/profile", (req, res) => {
   // 프론트에서 user_id 를 쿼리 파라미터 또는 헤더로 전달한다고 가정
   const userId = req.query.user_id; // 또는 req.headers['user-id']
