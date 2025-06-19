@@ -108,6 +108,7 @@ const MainPage = () => {
   const [user, _setUser] = useState(() =>
     JSON.parse(localStorage.getItem("user"))
   );
+  const [activityLogs, setActivityLogs] = useState([]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -245,6 +246,25 @@ const MainPage = () => {
       }
     }
   };
+
+  const fetchActivityLogs = useCallback(async () => {
+  try {
+    const res = await axios.get("/api/activity_logs", {
+      params: { projectId: selectedProjectId },
+    });
+    setActivityLogs(res.data);
+  } catch (err) {
+    console.error("활동 로그 불러오기 실패:", err);
+  }
+}, [selectedProjectId]);
+
+useEffect(() => {
+  if (selectedTab === "로그" && selectedProjectId) {
+    fetchActivityLogs();
+  }
+}, [selectedTab, selectedProjectId, fetchActivityLogs]);
+
+
 
   const toggleAccountMenu = () => setIsAccountMenuOpen(!isAccountMenuOpen);
   const toggleAlarmMenu = () => setIsAlarmMenuOpen(!isAlarmMenuOpen);
@@ -406,13 +426,29 @@ const MainPage = () => {
                   </div>
                   <div className="project-details-content">
                     {/* TODO: 이 부분도 동적으로 DB 데이터와 연결 (예시: selectedProject.description) */}
+                    {selectedTab === "로그" ? (
+                  <div>
+                    <h2>활동 로그</h2>
+                    {activityLogs.length === 0 ? (
+                      <p>활동 로그가 없습니다.</p>
+                    ) : (
+                      <ul className="activity-log-list">
+                        {activityLogs.map((log) => (
+                          <li key={log.id}>
+                            [{new Date(log.created_at).toLocaleString("ko-KR")}] {log.action_type} -{" "}
+                            {log.details}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : (
+                  <>
                     <h2>{selectedTab} 현황</h2>
-                    <p>
-                      프로젝트 설명:{" "}
-                      {selectedProject.content || "설명이 없습니다."}
-                    </p>
+                    <p>프로젝트 설명: {selectedProject.content || "설명이 없습니다."}</p>
                     <p>소유자: {selectedProject.created_by}</p>
-                    {/* 나머지 상세 정보도 selectedProject 객체의 속성을 이용하여 표시 */}
+                  </>
+                )}
                   </div>
                 </div>
               </div>
