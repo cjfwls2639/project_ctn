@@ -75,6 +75,16 @@ CREATE TABLE activity_logs (
     user_id INT NOT NULL,
     behavior VARCHAR(100) NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+<<<<<<< Updated upstream
     FOREIGN KEY (task_id) REFERENCES tasks(task_id),
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+=======
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES tasks(task_id) ON DELETE CASCADE
+);
+
+
+/*asdasd*/
+>>>>>>> Stashed changes
