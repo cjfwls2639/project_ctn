@@ -6,6 +6,7 @@ const Profile = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     // 컴포넌트가 렌더링될 때 사용자 정보를 불러오는 함수
@@ -48,6 +49,27 @@ const Profile = () => {
     fetchUserProfile();
   }, []);
 
+  const handleForgotPassword = async () => {
+    // 로그인된 사용자의 이메일을 가져옵니다 (state나 context에서).
+    const emailJSON = localStorage.getItem("user"); 
+    const email = JSON.parse(emailJSON).email;
+    
+    if (!email) {
+      alert("이메일 정보가 없습니다.");
+      return;
+    }
+
+    setIsSendingEmail(true);
+  
+    try {
+      const response = await axios.post('/api/forgot-password', { email });
+      alert(response.data.message);
+    } catch (error) {
+      alert("오류가 발생했습니다. 다시 시도해주세요.");
+    }
+    setIsSendingEmail(false);
+  };
+
   return (
     <div className="profile-container">
       <div className="profile-box">
@@ -76,7 +98,9 @@ const Profile = () => {
           !error && <p>로딩 중...</p>
         )}
 
-        <button className="profile-button">비밀번호 변경</button>
+        <button className="profile-button" onClick={handleForgotPassword} disabled={isSendingEmail}>
+          {isSendingEmail ? '비밀 번호 변경 이메일 보내는 중...' : '비밀번호 변경 이메일 받기'}
+        </button>
       </div>
     </div>
   );

@@ -35,11 +35,16 @@
 .sidebar-link {
   display: flex;
   align-items: center;
-  text-decoration: none;
-  color: #666;
+  color: #ffffff;
   padding: 0.75rem 0;
   border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
+  width: 100%;
+  border: none;
+  background-color: #8ac3ff;
+  text-align: left;
+  padding-left: 0.5rem;
+  cursor: pointer;
 }
 
 .sidebar-link:hover {
@@ -74,7 +79,7 @@
   border: none;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
   min-width: 0;
   position: absolute;
   width: 6.5rem;

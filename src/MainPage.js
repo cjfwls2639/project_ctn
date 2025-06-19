@@ -5,7 +5,7 @@ import "./styles/MainPage.css";
 import "./styles/Sidebar.css";
 import "./styles/NavigationBar.css";
 import "./styles/MainContent.css";
-//commit
+
 const ProjectModal = ({ isOpen, onClose, onSubmit }) => {
   const [projectName, setProjectName] = useState("");
   const [dDay, setDDay] = useState("");
@@ -104,8 +104,10 @@ const MainPage = () => {
   const [alarmCount, setAlarmCount] = useState(0);
   const [selectedTab, setSelectedTab] = useState("메인");
   const [error, setError] = useState(null);
-
-  const user = JSON.parse(localStorage.getItem("user"));
+  // eslint-disable-next-line no-unused-vars
+  const [user, _setUser] = useState(() =>
+    JSON.parse(localStorage.getItem("user"))
+  );
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -142,18 +144,16 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, navigate, selectedProjectId]);
+  }, [user, selectedProjectId, navigate]);
 
   //알람 불러오기
-  const fetchAlarms = async () => {
+  const fetchAlarms = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-
-      const response = await axios.get(`/api/tasks/due_date?userId`, {
+      const response = await axios.get("/api/tasks/due_date", {
         params: { userId: user.user_id },
       });
-
       setAlarms(response.data);
       setAlarmCount(response.data.length);
     } catch (err) {
@@ -162,28 +162,21 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-      const user_id = user.user_id;
-      if (user_id) {
-        fetchAlarms();
-      } else {
-        navigate("/login");
-      }
+    const loggedInUser = JSON.parse(localStorage.getItem("user"));
+
+    if (loggedInUser && loggedInUser.user_id) {
+      fetchAlarms();
+      fetchProjects();
     } else {
       navigate("/login");
     }
-  }, [user, fetchAlarms, navigate]);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
+  }, [navigate, fetchAlarms, fetchProjects]);
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // 로그아웃 시 사용자 정보 제거
+    localStorage.removeItem("user");
     navigate("/login");
   };
 
@@ -198,7 +191,7 @@ const MainPage = () => {
       const response = await axios.post("/api/projects", {
         name: projectData.name,
         content: projectData.content,
-        owner_id: user.user_id, // 로그인한 사용자 ID를 owner_id로 전달
+        created_by: user.user_id,
       });
       alert(response.data.message);
       await fetchProjects(); // 프로젝트 생성 후 목록을 다시 불러옵니다.
@@ -342,13 +335,12 @@ const MainPage = () => {
                     key={project.id}
                     className={project.id === selectedProjectId ? "active" : ""}
                   >
-                    <a
+                    <button
                       className="sidebar-link"
-                      style={{ cursor: "pointer" }}
                       onClick={() => setSelectedProjectId(project.id)}
                     >
-                      {project.name}
-                    </a>
+                      {project.project_name}
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -372,7 +364,7 @@ const MainPage = () => {
             {loading ? (
               <p>프로젝트를 불러오는 중...</p>
             ) : projects.length > 0 && selectedProject ? (
-              <>
+              <div>
                 <h1 className="project-title">{selectedProject.name}</h1>
                 <div className="content-container">
                   <div className="project-info">
@@ -419,11 +411,11 @@ const MainPage = () => {
                       프로젝트 설명:{" "}
                       {selectedProject.content || "설명이 없습니다."}
                     </p>
-                    <p>소유자: {selectedProject.owner_name}</p>
+                    <p>소유자: {selectedProject.created_by}</p>
                     {/* 나머지 상세 정보도 selectedProject 객체의 속성을 이용하여 표시 */}
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="no-projects">
                 <h2>프로젝트가 없습니다</h2>

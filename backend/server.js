@@ -13,23 +13,21 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // --- Helper Functions (나중에 별도 모듈로 분리 가능) ---
 // 활동 로그 기록 함수 (예시)
-const logActivity = async (userId, projectId, taskId, actionType, details) => {
+const logActivity = async (connection, userId, projectId, taskId, actionType, details) => {
   const sql =
     "INSERT INTO activity_logs (user_id, project_id, task_id, action_type, details) VALUES (?, ?, ?, ?, ?)";
   try {
-    await db
-      .promise()
-      .query(sql, [
-        userId,
-        projectId,
-        taskId,
-        actionType,
-        JSON.stringify(details),
-      ]);
+    await connection.query(sql, [
+      userId,
+      projectId,
+      taskId,
+      actionType,
+      JSON.stringify(details),
+    ]);
     console.log(`Activity logged: ${actionType}`);
   } catch (err) {
-    console.error("Error logging activity:", err);
-    // 로깅 실패가 주 로직에 영향을 주지 않도록 에러를 던지지 않음
+    console.error("Error logging activity in transaction:", err);
+    throw err;
   }
 };
 
@@ -80,7 +78,7 @@ app.post("/api/login", (req, res) => {
   
 // 테이블명 'users', 컬럼명 'user_id', 'password' 사용
   const sql =
-    "SELECT user_id, username, password FROM users WHERE username = ?";
+    "SELECT user_id, username, password, email FROM users WHERE username = ?";
   db.query(sql, [username], async (err, results) => {
     if (err) {
       console.error("Error finding user:", err);
@@ -98,9 +96,9 @@ app.post("/api/login", (req, res) => {
     }
 
     res.json({
-      message: "로그인 성공!",
       user_id: user.user_id,
       username: user.username,
+      email: user.email,
     });
   });
 });
@@ -132,8 +130,8 @@ app.get("/api/users/:id", (req, res) => {
 
 // 2.1. 새로운 프로젝트 생성 (CREATE)
 app.post("/api/projects", async (req, res) => {
-  const { name, content, owner_id } = req.body;
-  if (!name || !owner_id) {
+  const { name, content, created_by } = req.body;
+  if (!name || !created_by) {
     return res
       .status(400)
       .json({ error: "프로젝트 이름을 입력 해주세요." });
@@ -149,19 +147,20 @@ app.post("/api/projects", async (req, res) => {
     const [projectResult] = await connection.query(projectSql, [
       name,
       content,
-      owner_id,
+      created_by,
     ]);
     const projectId = projectResult.insertId;
 
     // 2. project_members 테이블에 소유자를 'manager'로 추가
     const memberSql =
       "INSERT INTO project_members (project_id, user_id, role_in_project) VALUES (?, ?, ?)";
-    await connection.query(memberSql, [projectId, owner_id, "manager"]);
+    await connection.query(memberSql, [projectId, created_by, "manager"]);
 
     // 3. 활동 로그 기록
-    await logActivity(created_by, projectId, null, "PROJECT_CREATED", {
+    await logActivity(connection, created_by, projectId, null, "PROJECT_CREATED", {
       projectName: name,
     });
+
 
     await connection.commit();
     res
@@ -262,7 +261,7 @@ app.put("/api/projects/:id", (req, res) => {
   }
 
   const sql = "UPDATE projects SET name = ?, content = ? WHERE id = ?";
-  db.query(sql, [name, content, id], (err, result) => {
+  db.query(sql, [name, description, id], (err, result) => {
     if (err) {
       console.error("Error updating project:", err);
       return res
@@ -343,28 +342,155 @@ app.delete("/api/projects/:id", async (req, res) => { // async 키워드 추가
   }
 });
 
+// --- 3. 알람 API (Tasks) ---
 
-// --- 3. 업무 API (Tasks) ---
+// 3. 알람 불러오기
+app.get("/api/tasks/due_date", (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res
+      .status(400)
+      .json({ error: "사용자 ID(userId) 쿼리 파라미터가 필요합니다." });
+  }
 
-// 3.1. 특정 프로젝트의 모든 업무 가져오기 (READ ALL FROM PROJECT)
+  // due_date가 오늘부터 7일 이내이면서 해당 userId에게 할당된 태스크를 조회합니다.
+  // CURDATE(): 현재 날짜를 반환하는 SQL 함수 (MySQL 기준)
+  // INTERVAL 7 DAY: 현재 날짜에 7일을 더하는 연산
+  // BETWEEN A AND B: A와 B 사이에 있는 값 (A와 B 포함)
+  const sql = `
+    SELECT t.*
+    FROM tasks t
+    JOIN task_assignees ta ON t.task_id = ta.task_id
+    WHERE ta.user_id = ?
+      AND t.due_date IS NOT NULL
+      AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
+    ORDER BY t.due_date ASC;
+  `;
+  
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error("Error fetching tasks due soon:", err);
+      return res
+        .status(500)
+        .json({ error: "알림 목록을 불러오는 중 오류가 발생했습니다." });
+    }
+    res.json(results);
+  });
+});
+
+
+const nodemailer = require('nodemailer');
+const crypto = require('crypto'); // Node.js 내장 모듈
+
+
+// --- 4. 비밀번호 재설정 API ---
+
+// --- 4.1. 비밀번호 재설정 요청 처리 API ---
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // 1. 이메일로 사용자 찾기
+    const [users] = await db.promise().query('SELECT * FROM users WHERE email = ?', [email]);
+    
+    if (users.length === 0) {
+      // 보안을 위해, 이메일이 존재하지 않아도 성공한 것처럼 응답합니다.
+      // (악의적인 사용자가 어떤 이메일이 가입되어 있는지 추측하는 것을 막기 위함)
+      return res.json({ message: '비밀번호 재설정 이메일을 보냈습니다. 받은 편지함을 확인해주세요.' });
+    }
+    const user = users[0];
+
+    // 2. 보안 토큰 생성
+    const token = crypto.randomBytes(20).toString('hex');
+
+    // 3. 토큰 만료 시간 설정 (예: 1시간 후)
+    const expires = new Date(Date.now() + 3600000); // 1시간 = 3600 * 1000 ms
+
+    // 4. DB에 토큰과 만료 시간 저장
+    await db.promise().query(
+      'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE user_id = ?',
+      [token, expires, user.user_id]
+    );
+
+    // 5. 이메일 발송 설정 (Nodemailer)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail', // 예: Gmail. 실제 서비스에서는 SendGrid, Mailgun 등 추천
+      auth: {
+        user: process.env.GMAIL_ADDRESS, // 실제 이메일 주소
+        pass: process.env.GMAIL_PASSWORD      // Gmail 앱 비밀번호 (보안 설정 필요)
+      }
+    });
+
+    const resetURL = `http://localhost:3000/reset-password/${token}`; // 프론트엔드 주소
+
+    const mailOptions = {
+      to: user.email,
+      from: process.env.GMAIL_ADDRESS,
+      subject: '비밀번호 재설정 요청',
+      text: `비밀번호를 재설정하려면 다음 링크를 클릭하세요:\n\n${resetURL}\n\n이 링크는 1시간 동안 유효합니다.`
+    };
+
+    // 6. 이메일 발송
+    await transporter.sendMail(mailOptions);
+
+    res.json({ message: '비밀번호 재설정 이메일을 보냈습니다. 받은 편지함을 확인해주세요.' });
+
+  } catch (err) {
+    console.error('비밀번호 재설정 요청 처리 중 오류:', err);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+
+// --- 4.2. 새 비밀번호로 업데이트하는 API ---
+app.post('/api/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    // 1. 토큰으로 사용자 찾기 (만료 시간도 확인)
+    const [users] = await db.promise().query(
+      'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > NOW()',
+      [token]
+    );
+
+    if (users.length === 0) {
+      return res.status(400).json({ error: '비밀번호 재설정 토큰이 유효하지 않거나 만료되었습니다.' });
+    }
+    const user = users[0];
+
+    // 2. 새 비밀번호 암호화
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. DB 업데이트 (비밀번호 변경 및 토큰 정보 삭제)
+    await db.promise().query(
+      'UPDATE users SET password = ?, password_reset_token = NULL, password_reset_expires = NULL WHERE user_id = ?',
+      [hashedPassword, user.user_id]
+    );
+
+    res.json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+
+  } catch (err) {
+    console.error('비밀번호 변경 중 오류:', err);
+    res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+  }
+});
+
+
+// --- 5. 업무 API (Tasks) ---
+
+// 5.1. 특정 프로젝트의 모든 업무 가져오기 (READ ALL FROM PROJECT)
 app.get("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const sql = `
         SELECT t.*, GROUP_CONCAT(u.username SEPARATOR ', ') AS assignees
-<<<<<<< Updated upstream
         FROM tasks as t LEFT JOIN task_assignees as ta ON t.task_id = ta.task_id
         LEFT JOIN users as u ON ta.user_id = u.user_id
         WHERE t.project_id = ?
         GROUP BY t.task_id
         ORDER BY t.created_at DESC;
     `;
-=======
-        FROM tasks AS t LEFT JOIN task_assignees AS ta ON t.task_id = ta.task_id
-        LEFT JOIN users AS u ON ta.user_id = u.user_id
-        WHERE t.project_id = ?
-        GROUP BY t.task_id
-        ORDER BY t.created_at DESC;`;
->>>>>>> Stashed changes
+    
   db.query(sql, [projectId], (err, results) => {
     if (err) {
       console.error(`Error fetching tasks for project ${projectId}:`, err);
@@ -376,7 +502,7 @@ app.get("/api/projects/:projectId/tasks", (req, res) => {
   });
 });
 
-// 3.2. 새로운 업무 생성 (CREATE)
+// 5.2. 새로운 업무 생성 (CREATE)
 app.post("/api/projects/:projectId/tasks", (req, res) => {
   const { projectId } = req.params;
   const {
@@ -497,11 +623,11 @@ app.get("/api/tasks/:taskId", async (req, res) => {
   }
 });
 
-// 3.4. 업무 정보 수정 (UPDATE)
+// 5.4. 업무 정보 수정 (UPDATE)
 app.put("/api/tasks/:id", (req, res) => {
   // TODO: 인증 로직 추가 (프로젝트 멤버만 수정 가능하도록)
   const { id } = req.params;
-  const { title, content, status, due_date, assigned_to_user_id } =
+  const { title, description, status, due_date, assigned_to_user_id } =
     req.body;
 
   // TODO: 변경된 필드만 감지하여 동적 쿼리 생성 및 활동 로그 상세 기록
@@ -531,9 +657,8 @@ app.put("/api/tasks/:id", (req, res) => {
     }
   );
 });
-/**
- * 3.5. 업무 삭제 (DELETE) - 관리자 권한 확인 로직 추가
- */
+
+// 5.5. 업무 삭제 (DELETE) - 관리자 권한 확인 로직 추가
 app.delete("/api/tasks/:id", (req, res) => {
   // TODO: 실제 프로젝트에서는 JWT 인증 미들웨어를 통해 사용자 ID를 가져와야 합니다.
   const { userId } = req.body; // 테스트를 위해 요청 body에서 사용자 ID를 받는다고 가정
@@ -579,9 +704,9 @@ app.delete("/api/tasks/:id", (req, res) => {
   });
 });
 
-// --- 4. 댓글 API (Comments on Tasks) ---
+// --- 6. 댓글 API (Comments on Tasks) ---
 
-// 4.1. 특정 업무의 모든 댓글 가져오기
+// 6.1. 특정 업무의 모든 댓글 가져오기
 app.get("/api/tasks/:taskId/comments", (req, res) => {
   const { taskId } = req.params;
   const sql = `
@@ -602,7 +727,7 @@ app.get("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
-// 4.2. 새로운 댓글 작성
+// 6.2. 새로운 댓글 작성
 app.post("/api/tasks/:taskId/comments", (req, res) => {
   const { taskId } = req.params;
   const { user_id, content } = req.body;
@@ -630,7 +755,7 @@ app.post("/api/tasks/:taskId/comments", (req, res) => {
   });
 });
 
-// --- 5. 프로필 API ---
+// --- 7. 프로필 API ---
 app.get("/api/profile", (req, res) => {
   // 프론트에서 user_id 를 쿼리 파라미터 또는 헤더로 전달한다고 가정
   const userId = req.query.user_id; // 또는 req.headers['user-id']
@@ -660,42 +785,6 @@ app.get("/api/profile", (req, res) => {
     res.json(results[0]);
   });
 });
-
-//6. 알람 불러오기
-app.get("/api/tasks/due_date", (req, res) => {
-  const { userId } = req.query;
-  if (!userId) {
-    return res
-      .status(400)
-      .json({ error: "사용자 ID(userId) 쿼리 파라미터가 필요합니다." });
-  }
-
-  // due_date가 오늘부터 7일 이내이면서 해당 userId에게 할당된 태스크를 조회합니다.
-  // CURDATE(): 현재 날짜를 반환하는 SQL 함수 (MySQL 기준)
-  // INTERVAL 7 DAY: 현재 날짜에 7일을 더하는 연산
-  // BETWEEN A AND B: A와 B 사이에 있는 값 (A와 B 포함)
-  const sql = `
-    SELECT t.*
-    FROM tasks t
-    JOIN task_assignees ta ON t.task_id = ta.task_id
-    WHERE ta.user_id = ?
-      AND t.due_date IS NOT NULL
-      AND t.due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)
-    ORDER BY t.due_date ASC;
-  `;
-
-  db.query(sql, [userId], (err, results) => {
-    console.log(sql, userId, results);
-    if (err) {
-      console.error("Error fetching tasks due soon:", err);
-      return res
-        .status(500)
-        .json({ error: "알림 목록을 불러오는 중 오류가 발생했습니다." });
-    }
-    res.json(results);
-  });
-});
-
 
 // 서버 시작
 app.listen(PORT, () => {
