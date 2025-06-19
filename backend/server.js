@@ -786,6 +786,25 @@ app.get("/api/profile", (req, res) => {
   });
 });
 
+// 활동 로그 조회 API
+app.get("/api/activity_logs", async (req, res) => {
+  const { projectId } = req.query;
+  if (!projectId) {
+    return res.status(400).json({ error: "projectId 쿼리 파라미터가 필요합니다." });
+  }
+
+  try {
+    const [rows] = await db
+      .promise()
+      .query("SELECT * FROM activity_logs WHERE project_id = ? ORDER BY created_at DESC", [projectId]);
+
+    res.json(rows);
+  } catch (error) {
+    console.error("활동 로그 조회 오류:", error);
+    res.status(500).json({ error: "활동 로그를 불러오는 중 오류가 발생했습니다." });
+  }
+});
+
 // 서버 시작
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
